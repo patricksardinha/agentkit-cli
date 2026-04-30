@@ -89,16 +89,16 @@ AgentKit introduces a **structured orchestration layer** that solves all five pr
 │                                                                 │
 │  Agent 1 → Infra & Setup                                        │
 │    runs: npm run build                                          │
-│    ✅ passes → moves to Agent 2                                 │
-│    ❌ fails  → analyzes error, fixes, retries (max 3x)          │
+│    ✅ passes → moves to Agent 2                                │
+│    ❌ fails  → analyzes error, fixes, retries (max 3x)         │
 │      ↓                                                          │
 │  Agent 2 → Auth & Data Layer                                    │
 │    runs: npm test                                               │
-│    ✅ passes → moves to Agent 3                                 │
+│    ✅ passes → moves to Agent 3                                │
 │      ↓                                                          │
 │  Agent 3 → Features                                             │
 │    runs: npm test                                               │
-│    ✅ passes → moves to Agent 4                                 │
+│    ✅ passes → moves to Agent 4                                │
 │      ↓                                                          │
 │  Agent 4 → Docs & Deploy                                        │
 │    ✅ 🎉 Workflow complete                                     │
