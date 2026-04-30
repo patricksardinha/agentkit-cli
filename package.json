@@ -1,6 +1,9 @@
 {
-  "name": "agentkit-cli",
+  "name": "@patricksardinha/agentkit-cli",
   "version": "0.1.0",
+  "publishConfig": {
+    "access": "public"
+  },
   "description": "Scaffolder des workflows multi-agents Claude Code",
   "type": "module",
   "bin": {
