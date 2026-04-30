@@ -1,20 +1,20 @@
-# AgentKit CLI
+# @patricksardinha/agentkit-cli
 
-> Bootstrap your projects with an AI-native orchestration layer — like `create vite@latest`, but for agentic development with Claude Code.
+> Bootstrap any project with an AI-native orchestration layer — like `create vite@latest`, but for agentic development with Claude Code.
 
-[![npm version](https://img.shields.io/npm/v/agentkit-cli)](https://www.npmjs.com/package/agentkit-cli)
-[![license](https://img.shields.io/npm/l/agentkit-cli)](./LICENSE)
+[![npm version](https://img.shields.io/npm/v/@patricksardinha/agentkit-cli)](https://www.npmjs.com/package/@patricksardinha/agentkit-cli)
+[![license](https://img.shields.io/npm/l/@patricksardinha/agentkit-cli)](./LICENSE)
 [![built with Claude Code](https://img.shields.io/badge/built%20with-Claude%20Code-7c3aed)](https://claude.ai/code)
 
 ---
 
 ## What is AgentKit?
 
-When you run `npm create vite@latest`, it scaffolds a complete React (or Vue, Svelte…) project in seconds — giving you a working structure you can build on immediately instead of configuring everything from scratch.
+When you run `npm create vite@latest`, it scaffolds a complete React project in seconds — giving you a working structure you can build on immediately instead of configuring everything from scratch.
 
 **AgentKit does the same thing, but for AI-native development.**
 
-It scaffolds the *orchestration layer* that sits on top of any project: the files that tell Claude Code **who** to be, **what** to build, and **how** to divide the work across specialized agents.
+It scaffolds the *orchestration layer* that sits on top of any project: the files that tell Claude Code **who** to be, **what** to build, **how** to divide the work across specialized agents, and **exactly what to do** — step by step, without you having to prompt each agent manually.
 
 ```
 Without AgentKit                 With AgentKit
@@ -23,11 +23,16 @@ my-project/                      my-project/
 ├── src/                         ├── src/
 ├── package.json                 ├── package.json
 └── README.md                    ├── README.md
-                                 ├── CLAUDE.md          ← generated
-                                 └── AGENT_WORKFLOW.md  ← generated
+                                 ├── CLAUDE.md             ← agent brief
+                                 ├── AGENT_WORKFLOW.md     ← roadmap
+                                 ├── PLAYBOOK.md           ← execution guide
+                                 └── agents/               ← per-agent skills
+                                     ├── agent-1-infra/
+                                     ├── agent-2-auth/
+                                     └── agent-3-features/
 ```
 
-You open Claude Code, and instead of spending the first 30 minutes explaining your stack and conventions, you just say: **"Read CLAUDE.md and AGENT_WORKFLOW.md, then run Agent 1."**
+You open Claude Code, type one instruction, and it runs the entire workflow autonomously.
 
 ---
 
@@ -37,10 +42,11 @@ Most developers using Claude Code today work with a single, long-running convers
 
 - **Context gets polluted** — one agent accumulates unrelated concerns
 - **No reusability** — you re-explain conventions on every project
-- **No parallelism** — everything is sequential because there's no coordination layer
-- **No audit trail** — no document captures the decisions made
+- **No parallelism** — everything is sequential without a coordination layer
+- **No audit trail** — no document captures decisions made
+- **Manual orchestration** — you have to manage agent transitions yourself
 
-AgentKit introduces a **structured orchestration layer** that solves all four problems. Your project gets two new files — `CLAUDE.md` and `AGENT_WORKFLOW.md` — that act as standing instructions for a team of specialized agents.
+AgentKit introduces a **structured orchestration layer** that solves all five problems.
 
 ---
 
@@ -48,7 +54,7 @@ AgentKit introduces a **structured orchestration layer** that solves all four pr
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│  Developer runs: npx agentkit init                              │
+│  Step 1 — You run: npx agentkit init --blueprint BLUEPRINT.md   │
 └─────────────────────────┬───────────────────────────────────────┘
                           │
                           ▼
@@ -62,216 +68,235 @@ AgentKit introduces a **structured orchestration layer** that solves all four pr
 │     → React · Next.js · Tauri · FastAPI · Express · Node        │
 │     → TypeScript? Tailwind? Prisma? Testing setup?              │
 │                                                                 │
-│  3. Generates adapted files                                     │
-│     → CLAUDE.md    (conventions, stack, commands, rules)        │
-│     → AGENT_WORKFLOW.md  (agents, scope, success criteria)      │
+│  3. Reads your blueprint (optional)                             │
+│     → parses features, requirements, architecture notes         │
+│     → generates agents tailored to YOUR features                │
+│                                                                 │
+│  4. Generates the orchestration layer                           │
+│     → CLAUDE.md           (conventions, stack, rules)           │
+│     → AGENT_WORKFLOW.md   (agents, scope, dependencies)         │
+│     → PLAYBOOK.md         (autonomous execution guide)          │
+│     → agents/agent-N-*/   (per-agent skills folders)            │
 └─────────────────────────┬───────────────────────────────────────┘
                           │
                           ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│  Your project — ready for agentic development                   │
+│  Step 2 — You open Claude Code and type ONE instruction:        │
 │                                                                 │
-│  Developer opens Claude Code and runs agents one by one:        │
+│  "Read PLAYBOOK.md and execute the procedure."                  │
 │                                                                 │
-│  Agent 1 → Infra & Setup     (success: project builds)          │
-│      ↓                                                          │
-│  Agent 2 → Core Feature A    (success: tests pass)              │
-│      ↓                                                          │
-│  Agent 3 → Core Feature B    (success: tests pass)              │
-│      ↓                                                          │
-│  Agent 4 → Docs & Deploy     (success: CI/CD green)             │
+│  Claude Code then runs autonomously:                            │
 │                                                                 │
-│  Human validates each success criterion before the next agent.  │
+│  Agent 1 → Infra & Setup                                        │
+│    runs: npm run build                                          │
+│    ✅ passes → moves to Agent 2                                 │
+│    ❌ fails  → analyzes error, fixes, retries (max 3x)          │
+│      ↓                                                          │
+│  Agent 2 → Auth & Data Layer                                    │
+│    runs: npm test                                               │
+│    ✅ passes → moves to Agent 3                                 │
+│      ↓                                                          │
+│  Agent 3 → Features                                             │
+│    runs: npm test                                               │
+│    ✅ passes → moves to Agent 4                                 │
+│      ↓                                                          │
+│  Agent 4 → Docs & Deploy                                        │
+│    ✅ 🎉 Workflow complete                                     │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-### The two generated files
+### The generated files
 
-**`CLAUDE.md`** — the standing brief for every agent. It answers:
-- What is this project and what stack does it use?
-- What are the absolute rules (naming conventions, forbidden patterns, testing requirements)?
-- What commands exist and what do they do?
-- What does "done" look like?
+**`CLAUDE.md`** — the standing brief for every agent. Covers stack, conventions, forbidden patterns, commands, and definition of done. Read by every agent at the start of their session.
 
-**`AGENT_WORKFLOW.md`** — the project roadmap, broken into agent-sized tasks. Each agent entry specifies:
-- Its scope (what it touches)
-- Its dependencies (which agent must finish first)
-- Its deliverables (what files it produces)
-- Its success criterion (a verifiable, runnable check)
+**`AGENT_WORKFLOW.md`** — the project roadmap broken into agent-sized tasks. Each entry specifies scope, dependencies, deliverables, and a verifiable success criterion.
+
+**`PLAYBOOK.md`** — the key innovation. A single file that Claude Code reads and executes as a complete autonomous workflow. Includes agent prompts, success criteria, retry logic, correction instructions, and human escalation rules. You don't manage agent transitions — Claude Code does.
+
+**`agents/agent-N-slug/`** — per-agent skill folders. Drop any `.md` files here (API docs, DB schemas, business conventions) and the relevant agent will read them before starting its work.
 
 ---
 
 ## Quickstart
 
 ```bash
-# In any project directory (empty or existing)
-npx agentkit init
+# In any project directory
+npx @patricksardinha/agentkit-cli init
+
+# With a blueprint for feature-specific agents
+npx @patricksardinha/agentkit-cli init --blueprint PROJECT_BLUEPRINT.md
+
+# Add a new feature to an existing project
+npx @patricksardinha/agentkit-cli add --feature "add PDF export system"
+
+# Check workflow status
+npx @patricksardinha/agentkit-cli status
 ```
 
-That's it. AgentKit detects your stack and writes the two files.
+Then open Claude Code and type:
+```
+Read PLAYBOOK.md and execute the procedure.
+```
+
+---
+
+## The Blueprint File
+
+The `--blueprint` flag transforms AgentKit from a generic scaffold tool into a project-specific orchestrator.
+
+Without a blueprint, AgentKit generates standard agents based on your stack (Components, Hooks, Pages, Tests for React). With a blueprint, it reads your feature requirements and generates agents tailored to exactly what you want to build.
+
+**Example `PROJECT_BLUEPRINT.md`:**
+
+```markdown
+# My App — Blueprint
+
+## Features
+- Email/password authentication with Supabase
+- Dashboard with D3 charts (revenue, users, conversion)
+- PDF export of reports
+- Dark/light theme
+
+## Tech constraints
+- Must work offline (IndexedDB for local data)
+- Tauri desktop build for Windows
+- French and English i18n
+
+## Architecture notes
+- Supabase for auth + reference data
+- Dexie for local user data
+- No Redux — Context API only
+```
+
+**What AgentKit generates from this blueprint:**
+
+```markdown
+## Agent 1 · Infra & Tauri Setup
+Scope    : Vite + React + Tauri + Tailwind, i18n config
+Criteria : npm run dev opens without error
+
+## Agent 2 · Auth & Supabase
+Scope    : Supabase client, email/password auth, bypass mode
+Criteria : login/logout functional, npm test passes
+
+## Agent 3 · Local Data Layer
+Scope    : Dexie schema, sync service, offline support
+Criteria : useLiveQuery returns data, npm test passes
+
+## Agent 4 · Dashboard & D3 Charts
+Scope    : chart components, data hooks, mock data
+Criteria : charts render, npm test passes
+
+## Agent 5 · PDF Export
+Scope    : PDF generation from dashboard data
+Criteria : export produces valid PDF, npm test passes
+
+## Agent 6 · Desktop & CI/CD
+Scope    : Tauri build, GitHub Actions, release workflow
+Criteria : npm run tauri:build produces installer
+```
+
+---
+
+## Per-Agent Skills
+
+Each agent gets its own folder under `agents/`. Drop any `.md` files there — API documentation, database schemas, business conventions, examples — and the agent reads them before starting.
+
+```
+agents/
+├── agent-2-auth/
+│   ├── skills.md              ← auto-generated template
+│   └── supabase-schema.md     ← you add this: your actual DB schema
+├── agent-4-dashboard/
+│   ├── skills.md
+│   └── chart-specs.md         ← you add this: exact chart requirements
+```
+
+The `skills.md` template generated by AgentKit:
+
+```markdown
+# Skills — Agent 2 · Auth & Supabase
+
+> This file is read by Agent 2 before starting its work.
+> Fill in what's relevant for your project.
+
+## Technical context (fill in)
+- Supabase URL      :
+- Tables involved   :
+- Expected RLS      :
+
+## Reference documentation (optional)
+<!-- paste API docs, schemas, examples here -->
+
+## Project-specific conventions (optional)
+<!-- e.g. "always use useSession(), never useUser()" -->
+```
+
+---
+
+## Handling Future Iterations
+
+When you want to add a feature to an already-built project:
 
 ```bash
-# Add a new specialized agent to an existing workflow
-npx agentkit add agent
+npx @patricksardinha/agentkit-cli add --feature "add CSV export to the dashboard"
+```
 
-# Check the status of your agent workflow
-npx agentkit status
+AgentKit:
+1. Reads your existing `AGENT_WORKFLOW.md` to find the last agent number
+2. Appends a new agent block scoped to the new feature
+3. Creates `agents/agent-N-csv-export/skills.md`
+4. Regenerates `PLAYBOOK.md` with the new agent included
+
+Then in Claude Code:
+```
+Read PLAYBOOK.md and execute only the agents that haven't been completed yet.
 ```
 
 ---
 
 ## Supported Stacks
 
-| Stack | Detected by | Template features |
+| Stack | Detected by | Template enrichment |
 |---|---|---|
-| **React** | `react` in `package.json` | TypeScript/JS, Vite, testing setup |
-| **Next.js** | `next` in `package.json` | App Router, Tailwind, Prisma (if present) |
-| **Tauri** | `src-tauri/` directory | Rust backend, IPC commands, Tauri plugins |
-| **FastAPI** | `fastapi` in `requirements.txt` | Python, Pydantic, async patterns |
-| **Express** | `express` in `package.json` | REST API, middleware, auth patterns |
+| **React** | `react` in `package.json` | TypeScript/JS, Vite, testing |
+| **Next.js** | `next` in `package.json` | App Router, Tailwind, Prisma |
+| **Tauri** | `src-tauri/` directory | Rust/JS boundary, IPC, plugins |
+| **FastAPI** | `fastapi` in `requirements.txt` | Python, Pydantic, async |
+| **Express** | `express` in `package.json` | REST, middleware, auth |
 | **Node.js** | `package.json` (generic) | Scripts, modules, CI/CD |
-| **Unknown** | fallback | Generic workflow, manually editable |
+| **Unknown** | fallback | Generic editable workflow |
 
-Stack detection is additive — extras like TypeScript, Tailwind, and Prisma are detected on top of the primary framework and enrich the generated templates accordingly.
-
----
-
-## Example Output
-
-### For a React + TypeScript project
-
-`npx agentkit init` in a React/TypeScript/Vite project generates:
-
-```markdown
-# CLAUDE.md — my-app
-
-## Stack
-- Framework : React (TypeScript)
-- Language  : TypeScript
-- Build     : Vite
-
-## Commands
-- `npm run dev`    — development server
-- `npm run build`  — production build
-- `npm test`       — run tests
-
-## Structure
-src/
-  components/   ← UI components (PascalCase)
-  hooks/        ← custom hooks (prefix: use*)
-  pages/        ← page-level components
-  utils/        ← shared helpers
-
-## Conventions
-1. Components in PascalCase
-2. Hooks prefixed with `use`
-3. Props interfaces named `*Props`
-4. All console output through a centralized logger
-```
-
-```markdown
-# Agent Workflow — my-app
-
-## Agents
-
-### Agent 1 · Components
-Scope    : reusable UI components
-Delivers : src/components/
-Criteria : components documented and tested
-
-### Agent 2 · State & Hooks
-Scope    : state management, custom hooks
-Delivers : src/hooks/
-Criteria : hooks unit-tested
-
-### Agent 3 · Pages & Routing
-Scope    : page assembly, react-router
-Delivers : src/pages/
-Criteria : navigation working
-
-### Agent 4 · Tests & CI
-Scope    : test coverage, CI configuration
-Delivers : tests/, .github/workflows/
-Criteria : npm test passes
-```
-
-### For a Tauri project (more complex detection)
-
-A project with `src-tauri/` gets a richer workflow that accounts for the Rust/JS boundary, IPC commands, plugin permissions, and the dual build system:
-
-```markdown
-# Agent Workflow — my-desktop-app
-
-### Agent 1 · Rust Commands
-Scope    : Tauri commands (IPC), permissions
-Delivers : src-tauri/src/commands.rs, tauri.conf.json
-Criteria : `cargo build` passes
-
-### Agent 2 · Frontend UI
-Scope    : TypeScript UI, IPC integration
-Delivers : src/components/, src/utils/
-Criteria : IPC calls functional
-
-### Agent 3 · Build & Packaging
-Scope    : build config, icons, installers
-Delivers : src-tauri/tauri.conf.json, icons/
-Criteria : `npm run tauri build` produces a bundle
-
-### Agent 4 · Tests
-Scope    : Rust tests + frontend tests
-Delivers : src-tauri/tests/, tests/
-Criteria : `cargo test` + `npm test` pass
-```
+Stack detection is additive — TypeScript, Tailwind, Prisma, and testing setup are detected on top of the primary framework and enrich all generated files accordingly.
 
 ---
 
 ## Design Philosophy
 
-### Why not just use a prompt template?
+### Why a PLAYBOOK.md instead of manual prompting?
 
-A prompt template lives in your head (or your notes). It gets copy-pasted, drifts between projects, and is lost the moment you close the conversation.
+Without AgentKit, a developer using Claude Code has to write a prompt for Agent 1, wait and validate, write a prompt for Agent 2, handle failures manually, and repeat for every agent. With `PLAYBOOK.md`, you write one instruction. Claude Code handles agent transitions, validates success criteria, retries on failure, and asks for human input only when genuinely blocked.
 
-`CLAUDE.md` and `AGENT_WORKFLOW.md` are **project artifacts**. They live in the repo, they're versioned, they're readable by every agent in every session, and they can be reviewed in a pull request like any other code.
+### Why per-agent skills instead of one big context?
 
-### Why separate agents instead of one big conversation?
-
-Each agent has a **bounded context** — it only knows what it needs to know. This has three effects:
-
-1. **Better output** — an agent focused solely on testing isn't distracted by infrastructure concerns
-2. **Human checkpoints** — you validate a success criterion before the next agent starts, catching errors early
-3. **Parallelism** — once dependencies are met, agents that don't depend on each other can run simultaneously
+Each agent should only know what it needs. An infrastructure agent doesn't need your business logic conventions. A features agent doesn't need your CI/CD configuration. Bounded context produces better output and prevents agents from making decisions outside their scope.
 
 ### Why verifiable success criteria?
 
-Every agent in `AGENT_WORKFLOW.md` ends with a criterion like `npm test passes` or `cargo build passes`. These aren't goals — they're **gates**. If the criterion isn't met, you don't prompt the next agent. This makes the workflow deterministic and auditable.
+Every agent ends with a runnable check (`npm test`, `cargo build`, `npm run build`). These aren't goals — they're gates. The PLAYBOOK enforces them. You always know exactly which agents have succeeded and which haven't.
 
 ---
 
-## Meta: How AgentKit Was Built
+## Meta: AgentKit Was Built With AgentKit
 
-AgentKit CLI was built using the same workflow it generates.
-
-The repo contains a `CLAUDE.md` and `AGENT_WORKFLOW.md` that describe how to build the CLI itself. Four specialized agents were used in sequence:
+This CLI was built using the exact workflow it generates. The `CLAUDE.md`, `AGENT_WORKFLOW.md`, and `PLAYBOOK.md` at the root of this repo drove the entire build process — written first, executed against, not added after the fact.
 
 ```
-Agent 1 · Infra & Setup
-  → package.json, tsconfig, tsup, vitest, GitHub Actions
-  → success: npm run build passes
-
-Agent 2 · Detectors
-  → src/detectors/stackDetector.ts, gitDetector.ts
-  → success: npm test passes on project fixtures
-
-Agent 3 · Generators & Templates
-  → src/generators/, src/templates/ (one per stack)
-  → success: valid files generated for each supported stack
-
-Agent 4 · Commands CLI
-  → src/commands/init.ts, add.ts, status.ts, src/cli.ts
-  → success: npx agentkit --help shows all commands
+Agent 1 · Infra & Setup       → success: npm run build passes
+Agent 2 · Detectors           → success: npm test passes on fixtures
+Agent 3 · Generators          → success: valid files for each stack
+Agent 4 · Commands CLI        → success: npx agentkit --help works
 ```
-
-The `CLAUDE.md` and `AGENT_WORKFLOW.md` at the root of this repo are the exact files that drove this build process. They are not documentation added after the fact — they are the source of truth that was written first and executed against.
 
 ---
 
@@ -280,32 +305,34 @@ The `CLAUDE.md` and `AGENT_WORKFLOW.md` at the root of this repo are the exact f
 ```
 agentkit-cli/
 ├── src/
-│   ├── cli.ts                  ← entry point (commander.js)
+│   ├── cli.ts
 │   ├── commands/
-│   │   ├── init.ts             ← npx agentkit init
-│   │   ├── add.ts              ← npx agentkit add agent
-│   │   └── status.ts           ← npx agentkit status
+│   │   ├── init.ts              ← npx agentkit init [--blueprint]
+│   │   ├── add.ts               ← npx agentkit add --feature
+│   │   └── status.ts            ← npx agentkit status
 │   ├── detectors/
-│   │   ├── stackDetector.ts    ← reads package.json, Cargo.toml, etc.
-│   │   └── gitDetector.ts      ← checks for .git directory
+│   │   ├── stackDetector.ts
+│   │   └── gitDetector.ts
 │   ├── generators/
-│   │   ├── claudeMdGenerator.ts   ← routes to the right template
-│   │   └── workflowGenerator.ts   ← routes to the right template
+│   │   ├── claudeMdGenerator.ts
+│   │   ├── workflowGenerator.ts
+│   │   ├── playbookGenerator.ts ← PLAYBOOK.md with full exec logic
+│   │   └── skillsGenerator.ts   ← agents/agent-N-slug/ folders
 │   ├── templates/
-│   │   ├── react.ts            ← React/Vite template
-│   │   ├── nextjs.ts           ← Next.js App Router template
-│   │   ├── tauri.ts            ← Tauri v2 template
-│   │   ├── fastapi.ts          ← FastAPI template
-│   │   ├── express.ts          ← Express.js template
-│   │   ├── node.ts             ← generic Node.js template
-│   │   └── unknown.ts          ← fallback for unknown stacks
+│   │   ├── react.ts
+│   │   ├── nextjs.ts
+│   │   ├── tauri.ts
+│   │   ├── fastapi.ts
+│   │   ├── express.ts
+│   │   ├── node.ts
+│   │   └── unknown.ts
 │   └── utils/
-│       └── logger.ts           ← chalk + ora output helpers
+│       └── logger.ts
 ├── tests/
-├── CLAUDE.md                   ← agent brief for this repo
-├── AGENT_WORKFLOW.md           ← agent workflow for this repo
+├── CLAUDE.md
+├── AGENT_WORKFLOW.md
+├── PLAYBOOK.md
 ├── package.json
-├── tsconfig.json
 └── tsup.config.ts
 ```
 
@@ -313,15 +340,15 @@ agentkit-cli/
 
 ## Contributing
 
-Pull requests are welcome. If you add a new stack template:
+To add a new stack template:
 
 1. Create `src/templates/your-stack.ts` — export `claudeMd(stack)` and `workflow(stack)`
-2. Add detection logic in `src/detectors/stackDetector.ts`
-3. Register the new case in `src/generators/claudeMdGenerator.ts` and `workflowGenerator.ts`
+2. Add detection in `src/detectors/stackDetector.ts`
+3. Register in both generators
 4. Add fixtures in `tests/detectors/` and tests in `tests/generators/`
 
 ---
 
 ## License
 
-MIT — © 2026
+MIT — © 2026 Patrick Sardinha
