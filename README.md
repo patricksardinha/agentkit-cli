@@ -32,7 +32,7 @@ my-project/                      my-project/
                                      └── agent-3-features/
 ```
 
-You open Claude Code, type one instruction, and it runs the entire workflow autonomously.
+You open Claude Code, type one instruction, and it runs the entire workflow autonomously. You don't need an API key or incur additional costs; a simple subscription to an LLM provider or the use of local models may suffice.
 
 ---
 
@@ -89,19 +89,20 @@ AgentKit introduces a **structured orchestration layer** that solves all five pr
 │                                                                 │
 │  Agent 1 → Infra & Setup                                        │
 │    runs: npm run build                                          │
-│    ✅ passes → moves to Agent 2                                │
-│    ❌ fails  → analyzes error, fixes, retries (max 3x)         │
+│    ✅ passes → moves to Agent 2                                 │
+│    ❌ fails  → analyzes error, fixes, retries                   │
+│              (max 3 time before requesting human intervention)  │
 │      ↓                                                          │
 │  Agent 2 → Auth & Data Layer                                    │
 │    runs: npm test                                               │
-│    ✅ passes → moves to Agent 3                                │
+│    ✅ passes → moves to Agent 3                                 │
 │      ↓                                                          │
 │  Agent 3 → Features                                             │
 │    runs: npm test                                               │
-│    ✅ passes → moves to Agent 4                                │
+│    ✅ passes → moves to Agent 4                                 │
 │      ↓                                                          │
 │  Agent 4 → Docs & Deploy                                        │
-│    ✅ 🎉 Workflow complete                                     │
+│    ✅ Workflow complete                                         │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -111,7 +112,7 @@ AgentKit introduces a **structured orchestration layer** that solves all five pr
 
 **`AGENT_WORKFLOW.md`** — the project roadmap broken into agent-sized tasks. Each entry specifies scope, dependencies, deliverables, and a verifiable success criterion.
 
-**`PLAYBOOK.md`** — the key innovation. A single file that Claude Code reads and executes as a complete autonomous workflow. Includes agent prompts, success criteria, retry logic, correction instructions, and human escalation rules. You don't manage agent transitions — Claude Code does.
+**`PLAYBOOK.md`** — a single file that Claude Code reads and executes as a complete autonomous workflow. Includes agent prompts, success criteria, retry logic, correction instructions, and human escalation rules. You don't manage agent transitions — Claude Code does.
 
 **`agents/agent-N-slug/`** — per-agent skill folders. Drop any `.md` files here (API docs, DB schemas, business conventions) and the relevant agent will read them before starting its work.
 
