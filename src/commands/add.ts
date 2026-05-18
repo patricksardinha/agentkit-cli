@@ -31,7 +31,7 @@ export async function addFeatureToProject(
   try {
     workflowContent = await readFile(workflowPath, 'utf-8')
   } catch {
-    throw new Error(`AGENT_WORKFLOW.md introuvable dans ${projectDir} — lancez agentkit init`)
+    throw new Error(`AGENT_WORKFLOW.md not found in ${projectDir} — run agentkit init first`)
   }
 
   const existingAgents = extractAgentsFromWorkflow(workflowContent)
@@ -70,7 +70,14 @@ Critère   : npm run build && npm test
   } catch { /* use dirname fallback */ }
 
   const allAgents = [...existingAgents, newAgent]
-  const playbookContent = generatePlaybook({ agents: allAgents, projectName })
+
+  // When adding a feature iteration, hasBlueprint is false —
+  // Phase 0 decomposition only runs during the initial init with --blueprint.
+  const playbookContent = generatePlaybook({
+    agents: allAgents,
+    projectName,
+    hasBlueprint: false,
+  })
   await writeFile(playbookPath, playbookContent, 'utf-8')
 
   return {
@@ -82,15 +89,15 @@ Critère   : npm run build && npm test
 export function registerAdd(program: Command): void {
   const addCmd = program
     .command('add')
-    .description('Ajoute des ressources au projet agentkit')
-    .option('--feature <description>', 'Ajoute un agent depuis une description de feature et régénère PLAYBOOK.md')
+    .description('Add resources to the agentkit project')
+    .option('--feature <description>', 'Add an agent from a feature description and regenerate PLAYBOOK.md')
     .action(async (options: { feature?: string }) => {
       if (options.feature) {
         try {
           const result = await addFeatureToProject(options.feature, process.cwd())
-          logger.success(`Agent ajouté   : ${result.agent.fullName}`)
-          logger.success(`Dossier créé   : agents/agent-${result.agent.number}-${result.agent.slug}/`)
-          logger.success('PLAYBOOK.md    : régénéré')
+          logger.success(`Agent added    : ${result.agent.fullName}`)
+          logger.success(`Folder created : agents/agent-${result.agent.number}-${result.agent.slug}/`)
+          logger.success('PLAYBOOK.md    : regenerated')
         } catch (err) {
           logger.error(err instanceof Error ? err.message : String(err))
           process.exit(1)
@@ -102,7 +109,7 @@ export function registerAdd(program: Command): void {
 
   addCmd
     .command('agent')
-    .description('Ajoute un nouvel agent dans AGENT_WORKFLOW.md (interactif)')
+    .description('Add a new agent to AGENT_WORKFLOW.md (interactive)')
     .action(async () => {
       const cwd = process.cwd()
       const workflowPath = join(cwd, 'AGENT_WORKFLOW.md')
@@ -111,7 +118,7 @@ export function registerAdd(program: Command): void {
       try {
         existing = await readFile(workflowPath, 'utf-8')
       } catch {
-        logger.error('AGENT_WORKFLOW.md introuvable — lancez d\'abord : agentkit init')
+        logger.error('AGENT_WORKFLOW.md not found — run agentkit init first')
         process.exit(1)
       }
 
@@ -127,23 +134,23 @@ export function registerAdd(program: Command): void {
         {
           type: 'input',
           name: 'name',
-          message: `Nom de l'agent (ex: "Agent ${nextNumber} · Feature X") :`,
+          message: `Agent name (e.g. "Agent ${nextNumber} · Feature X"):`,
           default: `Agent ${nextNumber}`,
         },
         {
           type: 'input',
           name: 'scope',
-          message: 'Périmètre (une phrase) :',
+          message: 'Scope (one sentence):',
         },
         {
           type: 'input',
           name: 'outputs',
-          message: 'Fichiers produits (séparés par des virgules) :',
+          message: 'Deliverables (comma-separated):',
         },
         {
           type: 'input',
           name: 'criterion',
-          message: 'Critère de succès :',
+          message: 'Success criterion:',
         },
       ])
 
@@ -161,6 +168,6 @@ Critère   : ${answers.criterion}
 `
 
       await writeFile(workflowPath, existing + agentSection, 'utf-8')
-      logger.success(`Agent "${answers.name}" ajouté dans AGENT_WORKFLOW.md`)
+      logger.success(`Agent "${answers.name}" added to AGENT_WORKFLOW.md`)
     })
 }

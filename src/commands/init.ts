@@ -115,7 +115,7 @@ export function registerInit(program: Command): void {
       const claudeMdContent = generateClaudeMd(stack, blueprintContent)
       const workflowContent = generateWorkflow(stack, blueprintContent)
       const agents = extractAgentsFromWorkflow(workflowContent)
-      const playbookContent = generatePlaybook({ agents, projectName })
+      const playbookContent = generatePlaybook({ agents, projectName, hasBlueprint: !!blueprintContent })
       await writeFile(claudeMdPath, claudeMdContent, 'utf-8')
       await writeFile(workflowPath, workflowContent, 'utf-8')
       await writeFile(playbookPath, playbookContent, 'utf-8')

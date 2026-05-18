@@ -116,7 +116,7 @@ describe('addFeatureToProject', () => {
   it('throws an error when AGENT_WORKFLOW.md is missing', async () => {
     tempDir = await mkdtemp(join(tmpdir(), 'agentkit-add-test-'))
     await expect(addFeatureToProject('Add feature', tempDir)).rejects.toThrow(
-      'AGENT_WORKFLOW.md introuvable',
+      'AGENT_WORKFLOW.md not found in',
     )
   })
 
