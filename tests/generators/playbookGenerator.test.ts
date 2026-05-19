@@ -25,110 +25,155 @@ const sampleAgents: Agent[] = [
   },
 ]
 
-// ─── generatePlaybook without blueprint ───────────────────────────────────────
+// ─── Common behaviour (both modes) ────────────────────────────────────────────
 
-describe('generatePlaybook (hasBlueprint: false)', () => {
-  it('returns a non-empty string', () => {
-    const result = generatePlaybook({ agents: sampleAgents, projectName: 'my-app', hasBlueprint: false })
-    expect(typeof result).toBe('string')
-    expect(result.length).toBeGreaterThan(0)
-  })
+describe('generatePlaybook (common)', () => {
+  for (const hasBlueprint of [true, false]) {
+    const label = hasBlueprint ? 'hasBlueprint: true' : 'hasBlueprint: false'
 
-  it('contains the project name', () => {
-    const result = generatePlaybook({ agents: sampleAgents, projectName: 'my-app', hasBlueprint: false })
-    expect(result).toContain('my-app')
-  })
+    it(`[${label}] returns a non-empty string`, () => {
+      const result = generatePlaybook({ agents: sampleAgents, projectName: 'my-app', hasBlueprint })
+      expect(typeof result).toBe('string')
+      expect(result.length).toBeGreaterThan(0)
+    })
 
-  it('contains the one-instruction block', () => {
-    const result = generatePlaybook({ agents: sampleAgents, projectName: 'my-app', hasBlueprint: false })
-    expect(result).toContain('Read PLAYBOOK.md and execute the procedure')
-  })
+    it(`[${label}] contains the project name`, () => {
+      const result = generatePlaybook({ agents: sampleAgents, projectName: 'my-app', hasBlueprint })
+      expect(result).toContain('my-app')
+    })
 
-  it('contains global execution rules', () => {
-    const result = generatePlaybook({ agents: sampleAgents, projectName: 'my-app', hasBlueprint: false })
-    expect(result).toContain('Global Execution Rules')
-    expect(result).toContain('max 3 attempts')
-    expect(result).toContain('human validation')
-    expect(result).toContain('Never move to the next agent')
-  })
+    it(`[${label}] contains the one-instruction block`, () => {
+      const result = generatePlaybook({ agents: sampleAgents, projectName: 'my-app', hasBlueprint })
+      expect(result).toContain('Read PLAYBOOK.md and execute the procedure')
+    })
 
-  it('does NOT contain Phase 0 when hasBlueprint is false', () => {
-    const result = generatePlaybook({ agents: sampleAgents, projectName: 'my-app', hasBlueprint: false })
-    expect(result).not.toContain('Phase 0')
-    expect(result).not.toContain('Agent Decomposition')
-  })
+    it(`[${label}] contains global execution rules`, () => {
+      const result = generatePlaybook({ agents: sampleAgents, projectName: 'my-app', hasBlueprint })
+      expect(result).toContain('Global Execution Rules')
+      expect(result).toContain('max 3 attempts')
+      expect(result).toContain('human validation')
+      expect(result).toContain('Never move to the next agent')
+    })
 
-  it('contains a block for each agent', () => {
-    const result = generatePlaybook({ agents: sampleAgents, projectName: 'my-app', hasBlueprint: false })
-    for (const agent of sampleAgents) {
-      expect(result).toContain(agent.fullName)
-      expect(result).toContain(agent.scope)
-      expect(result).toContain(`agents/agent-${agent.number}-${agent.slug}/skills.md`)
-    }
-  })
+    it(`[${label}] always contains Phase 0`, () => {
+      const result = generatePlaybook({ agents: sampleAgents, projectName: 'my-app', hasBlueprint })
+      expect(result).toContain('Phase 0')
+    })
 
-  it('each agent block contains outputs and criterion', () => {
-    const result = generatePlaybook({ agents: sampleAgents, projectName: 'my-app', hasBlueprint: false })
-    expect(result).toContain('package.json')
-    expect(result).toContain('npm run build')
-    expect(result).toContain('src/components/')
-    expect(result).toContain('npm test')
-  })
+    it(`[${label}] always contains Phase 1`, () => {
+      const result = generatePlaybook({ agents: sampleAgents, projectName: 'my-app', hasBlueprint })
+      expect(result).toContain('Phase 1')
+    })
 
-  it('contains the future iterations section', () => {
-    const result = generatePlaybook({ agents: sampleAgents, projectName: 'my-app', hasBlueprint: false })
-    expect(result).toContain('Future Iterations')
-    expect(result).toContain('agentkit add --feature')
-  })
+    it(`[${label}] Phase 0 comes before Phase 1`, () => {
+      const result = generatePlaybook({ agents: sampleAgents, projectName: 'my-app', hasBlueprint })
+      expect(result.indexOf('Phase 0')).toBeLessThan(result.indexOf('Phase 1'))
+    })
 
-  it('contains the human validation section', () => {
-    const result = generatePlaybook({ agents: sampleAgents, projectName: 'my-app', hasBlueprint: false })
-    expect(result).toContain('Human Validation Required')
-    expect(result).toContain('3 consecutive failures')
-    expect(result).toContain('Missing external dependency')
-    expect(result).toContain('Conflict')
-  })
+    it(`[${label}] contains a block for each agent`, () => {
+      const result = generatePlaybook({ agents: sampleAgents, projectName: 'my-app', hasBlueprint })
+      for (const agent of sampleAgents) {
+        expect(result).toContain(agent.fullName)
+        expect(result).toContain(agent.scope)
+        expect(result).toContain(`agents/agent-${agent.number}-${agent.slug}/skills.md`)
+      }
+    })
 
-  it('handles an empty agents list gracefully', () => {
-    const result = generatePlaybook({ agents: [], projectName: 'empty-project', hasBlueprint: false })
-    expect(typeof result).toBe('string')
-    expect(result).toContain('empty-project')
-  })
+    it(`[${label}] each agent block contains outputs and criterion`, () => {
+      const result = generatePlaybook({ agents: sampleAgents, projectName: 'my-app', hasBlueprint })
+      expect(result).toContain('package.json')
+      expect(result).toContain('npm run build')
+      expect(result).toContain('src/components/')
+      expect(result).toContain('npm test')
+    })
+
+    it(`[${label}] contains the future iterations section`, () => {
+      const result = generatePlaybook({ agents: sampleAgents, projectName: 'my-app', hasBlueprint })
+      expect(result).toContain('Future Iterations')
+      expect(result).toContain('agentkit add --feature')
+    })
+
+    it(`[${label}] contains the human validation section`, () => {
+      const result = generatePlaybook({ agents: sampleAgents, projectName: 'my-app', hasBlueprint })
+      expect(result).toContain('Human Validation Required')
+      expect(result).toContain('3 consecutive failures')
+      expect(result).toContain('Missing external dependency')
+      expect(result).toContain('End of Phase 0')
+    })
+
+    it(`[${label}] handles an empty agents list gracefully`, () => {
+      const result = generatePlaybook({ agents: [], projectName: 'empty-project', hasBlueprint })
+      expect(typeof result).toBe('string')
+      expect(result).toContain('empty-project')
+    })
+  }
 })
 
-// ─── generatePlaybook with blueprint ──────────────────────────────────────────
+// ─── Phase 0 with blueprint (Decomposition mode) ──────────────────────────────
 
-describe('generatePlaybook (hasBlueprint: true)', () => {
-  it('contains Phase 0 when hasBlueprint is true', () => {
+describe('generatePlaybook Phase 0 — Decomposition (hasBlueprint: true)', () => {
+  it('contains the decomposition title', () => {
     const result = generatePlaybook({ agents: sampleAgents, projectName: 'my-app', hasBlueprint: true })
-    expect(result).toContain('Phase 0')
     expect(result).toContain('Agent Decomposition')
   })
 
-  it('contains decomposition rules in Phase 0', () => {
+  it('references PROJECT_BLUEPRINT.md', () => {
     const result = generatePlaybook({ agents: sampleAgents, projectName: 'my-app', hasBlueprint: true })
     expect(result).toContain('PROJECT_BLUEPRINT.md')
-    expect(result).toContain('AGENT_WORKFLOW.md')
-    expect(result).toContain('Maximum 6 agents')
-    expect(result).toContain('human validation')
   })
 
-  it('contains the validation gate instruction', () => {
+  it('contains decomposition rules', () => {
+    const result = generatePlaybook({ agents: sampleAgents, projectName: 'my-app', hasBlueprint: true })
+    expect(result).toContain('Maximum 6 agents')
+    expect(result).toContain('AGENT_WORKFLOW.md')
+  })
+
+  it('contains the validation gate', () => {
     const result = generatePlaybook({ agents: sampleAgents, projectName: 'my-app', hasBlueprint: true })
     expect(result).toContain('Should I proceed')
   })
 
-  it('still contains Phase 1 execution after Phase 0', () => {
+  it('does NOT contain Project Discovery language', () => {
     const result = generatePlaybook({ agents: sampleAgents, projectName: 'my-app', hasBlueprint: true })
-    expect(result).toContain('Phase 1')
-    expect(result).toContain('Agent 1 · Infra & Setup')
+    expect(result).not.toContain('Project Discovery')
+    expect(result).not.toContain('Ask the user these questions')
+  })
+})
+
+// ─── Phase 0 without blueprint (Discovery mode) ───────────────────────────────
+
+describe('generatePlaybook Phase 0 — Discovery (hasBlueprint: false)', () => {
+  it('contains the discovery title', () => {
+    const result = generatePlaybook({ agents: sampleAgents, projectName: 'my-app', hasBlueprint: false })
+    expect(result).toContain('Project Discovery')
   })
 
-  it('contains both phases in the correct order', () => {
-    const result = generatePlaybook({ agents: sampleAgents, projectName: 'my-app', hasBlueprint: true })
-    const phase0Index = result.indexOf('Phase 0')
-    const phase1Index = result.indexOf('Phase 1')
-    expect(phase0Index).toBeLessThan(phase1Index)
+  it('instructs Claude Code to ask the user questions', () => {
+    const result = generatePlaybook({ agents: sampleAgents, projectName: 'my-app', hasBlueprint: false })
+    expect(result).toContain('Ask the user these questions')
+    expect(result).toContain('What is this project')
+    expect(result).toContain('What are the main features')
+  })
+
+  it('still contains decomposition rules', () => {
+    const result = generatePlaybook({ agents: sampleAgents, projectName: 'my-app', hasBlueprint: false })
+    expect(result).toContain('Maximum 6 agents')
+    expect(result).toContain('AGENT_WORKFLOW.md')
+  })
+
+  it('still contains the validation gate', () => {
+    const result = generatePlaybook({ agents: sampleAgents, projectName: 'my-app', hasBlueprint: false })
+    expect(result).toContain('Should I proceed')
+  })
+
+  it('does NOT reference PROJECT_BLUEPRINT.md as a file to read', () => {
+    const result = generatePlaybook({ agents: sampleAgents, projectName: 'my-app', hasBlueprint: false })
+    expect(result).not.toContain('A `PROJECT_BLUEPRINT.md` was provided')
+  })
+
+  it('does NOT contain Agent Decomposition title', () => {
+    const result = generatePlaybook({ agents: sampleAgents, projectName: 'my-app', hasBlueprint: false })
+    expect(result).not.toContain('Agent Decomposition (run this first)')
   })
 })
 

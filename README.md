@@ -26,17 +26,25 @@ AgentKit contains **no AI**. No API calls, no LLM integration, no costs, no API 
 
 This is a deliberate choice. AgentKit is a **structural tool** — it generates the scaffolding, the rules, and the execution framework. The intelligence comes from two places:
 
-- **You** — you write a plain-language `PROJECT_BLUEPRINT.md` describing what you want to build
-- **Claude Code** — it reads the blueprint, decomposes the project into specialized agents, then executes them in sequence
+- **You** — you optionally write a `PROJECT_BLUEPRINT.md` describing what you want to build
+- **Claude Code** — it either reads your blueprint or asks you questions, decomposes the project into specialized agents, then executes them in sequence
 
-This separation means AgentKit works with any LLM (Claude Code, local models via Ollama, or any other tool that reads markdown files), never becomes outdated as AI models improve, and costs nothing to run.
+This separation means AgentKit works with any LLM and never becomes outdated
+as AI models improve. The tool itself costs nothing to run — but be aware:
+
+- **Claude Code or any hosted LLM** requires a paid subscription to the
+  provider (Anthropic, OpenAI, etc.)
+- **Local models via Ollama** are free to run, but require a machine with
+  sufficient RAM and ideally a dedicated GPU — a standard laptop may
+  struggle with larger models
+- **AgentKit itself** has no cost, no API key, and no usage limits
 
 ```
-You (write the blueprint)
+You (optionally write a blueprint)
         ↓
 AgentKit CLI (generates the structure)
         ↓
-Claude Code (decomposes + executes)
+Claude Code (discovers or reads blueprint → decomposes → executes)
         ↓
 Your finished project
 ```
@@ -53,19 +61,66 @@ Most developers using Claude Code today work with a single, long-running convers
 - **Manual orchestration** — you have to manage agent transitions yourself
 - **Poor decomposition** — most developers don't know how to split work into optimal agents
 
-AgentKit solves all five — including the last one, by delegating the decomposition itself to Claude Code.
+AgentKit solves all five — including the last one, by always delegating decomposition to Claude Code, whether or not you provide a blueprint.
 
 ---
 
 ## How It Works
 
-### Step 1 — Write your blueprint (you)
+AgentKit always runs in two phases inside Claude Code. **Phase 0 always runs first**, regardless of whether you provided a blueprint. The difference is only the *source* of information.
 
-Create a `PROJECT_BLUEPRINT.md` at the root of your project. Write it in plain language — just describe what you want to build. No need to think about agents, layers, or technical structure. That's Claude Code's job.
+### Without blueprint — Phase 0 asks you
+
+```bash
+npx @patricksardinha/agentkit-cli init
+```
+
+When Claude Code reads the generated PLAYBOOK, it starts with **Phase 0 — Project Discovery**: it asks you three questions directly in the chat and waits for your answers before decomposing anything.
 
 ```
-my-project/
-└── PROJECT_BLUEPRINT.md    ← you write this (plain language, no structure required)
+Claude Code: "Before I start, I need to understand what you want to build.
+
+  1. What is this project? (one sentence)
+  2. What are the main features you want to build?
+  3. Any tech constraints or architecture preferences?
+
+Please answer and I'll propose an agent decomposition."
+
+You: "It's a desktop app where I log my dev sessions.
+      Features: session logging, weekly summaries, natural language search.
+      Constraints: Tauri v2, all local, no cloud, Ollama for AI."
+
+Claude Code: "I've decomposed the project into 5 agents:
+  1. Infra & Tauri Setup
+  2. Data Layer (Dexie)
+  3. Ollama Integration
+  4. RAG & Search
+  5. UI & Features
+Should I proceed?"
+
+You: "Yes."  ← then execution begins
+```
+
+### With blueprint — Phase 0 reads your file
+
+Write a `PROJECT_BLUEPRINT.md` at the root of your project in plain language — just describe what you want to build. No agents, no structure, no technical layers required.
+
+```bash
+npx @patricksardinha/agentkit-cli init --blueprint PROJECT_BLUEPRINT.md
+```
+
+When Claude Code reads the generated PLAYBOOK, it starts with **Phase 0 — Agent Decomposition**: it reads your blueprint and proposes an agent structure before writing any code.
+
+```
+Claude Code: "I've read PROJECT_BLUEPRINT.md and decomposed the project into 5 agents:
+  1. Infra & Tauri Setup
+  2. Data Layer (Dexie)
+  3. Ollama Integration
+  4. RAG & Search
+  5. UI & Features
+Should I proceed?"
+
+You: "Yes."  ← then execution begins
 ```
 
 **A good blueprint looks like this:**
@@ -99,75 +154,9 @@ I also want to search my history in natural language.
 - Export via Tauri fs plugin
 ```
 
-That's all you need to write. Notice there are no agents, no technical layers, no decomposition — just your intent.
+### Phase 1 — Execution (same in both cases)
 
-### Step 2 — Run AgentKit (AgentKit CLI)
-
-```bash
-npx @patricksardinha/agentkit-cli init --blueprint PROJECT_BLUEPRINT.md
-```
-
-AgentKit reads your blueprint and detected stack, then generates the full orchestration layer:
-
-```
-my-project/
-├── PROJECT_BLUEPRINT.md         ← your input (untouched)
-│
-├── CLAUDE.md                    ← generated: conventions, stack, rules
-├── AGENT_WORKFLOW.md            ← generated: placeholder (Claude Code fills this)
-├── PLAYBOOK.md                  ← generated: full execution guide
-│
-└── agents/                      ← generated: per-agent skill folders
-    ├── agent-1-infra/
-    │   └── skills.md
-    ├── agent-2-data/
-    │   └── skills.md
-    └── agent-3-features/
-        └── skills.md
-```
-
-### Step 3 — Optionally enrich the skills files (you)
-
-Before running Claude Code, you can drop context-specific `.md` files into any agent's folder. The agent reads them before starting its work:
-
-```
-agents/
-├── agent-3-ollama/
-│   ├── skills.md                    ← auto-generated template
-│   └── ollama-api-reference.md      ← you add this: Ollama API docs
-└── agent-4-rag/
-    ├── skills.md
-    └── cosine-similarity-example.md ← you add this: algorithm reference
-```
-
-This is the right place to add API documentation, database schemas, algorithm references, or any project-specific knowledge that a specific agent needs.
-
-### Step 4 — Open Claude Code and type one instruction (Claude Code)
-
-```
-Read PLAYBOOK.md and execute the procedure.
-```
-
-Claude Code then runs in two phases automatically:
-
-**Phase 0 — Decomposition (Claude Code reads your blueprint and decides)**
-
-Claude Code reads `PROJECT_BLUEPRINT.md` and decomposes the project into specialized agents following built-in rules (one agent per technical layer, ordered by dependency, maximum 6 agents). It writes the result into `AGENT_WORKFLOW.md` and asks for your validation before continuing:
-
-```
-"I have decomposed the project into 6 agents:
-  1. Infra & Tauri Setup
-  2. Data Layer (Dexie)
-  3. Ollama Integration
-  4. RAG & Search
-  5. UI & Features
-  6. Desktop & Release
-Should I proceed?"
-```
-
-You answer yes (or ask for adjustments), and execution begins.
-
-**Phase 1 — Execution (Claude Code runs each agent autonomously)**
+Once you validate the decomposition, Claude Code executes each agent autonomously:
 
 ```
 Agent 1 → Infra & Tauri Setup
@@ -182,44 +171,64 @@ Agent 2 → Data Layer (Dexie)
   runs   : npm test
   ✅ passes → moves to Agent 3
     ↓
-Agent 3 → Ollama Integration
-  ...
+...
     ↓
-Agent 6 → Desktop & Release
+Agent N → last agent
   ✅ 🎉 Workflow complete
+```
+
+### The one instruction
+
+In both cases, the instruction to give Claude Code is identical:
+
+```
+Read PLAYBOOK.md and execute the procedure.
 ```
 
 ---
 
 ## The Generated Files
 
-**`CLAUDE.md`** — the standing brief for every agent. Covers stack, conventions, forbidden patterns, commands, and definition of done. Read by every agent at the start of their session. Never changes between agents.
+```
+my-project/
+├── PROJECT_BLUEPRINT.md         ← your input (untouched, optional)
+│
+├── CLAUDE.md                    ← generated: conventions, stack, rules
+├── AGENT_WORKFLOW.md            ← placeholder: Claude Code fills this in Phase 0
+├── PLAYBOOK.md                  ← generated: Phase 0 + Phase 1 execution engine
+│
+└── agents/                      ← generated: per-agent skill folders
+    ├── agent-1-infra/
+    │   └── skills.md            ← fill in infra-specific context
+    ├── agent-2-data/
+    │   └── skills.md            ← fill in data-specific context
+    └── agent-3-features/
+        └── skills.md            ← fill in feature-specific context
+```
 
-**`AGENT_WORKFLOW.md`** — starts as a placeholder. Claude Code fills it during Phase 0 with the actual agent decomposition based on your blueprint. Becomes the single source of truth for the project roadmap.
+**`CLAUDE.md`** — the standing brief for every agent. Covers stack, conventions, forbidden patterns, commands, and definition of done. Read by every agent at the start of their session.
 
-**`PLAYBOOK.md`** — the execution engine. Contains Phase 0 (decomposition rules and validation gate) and Phase 1 (agent execution loop with retry logic and human escalation). You never edit this file — Claude Code reads and follows it.
+**`AGENT_WORKFLOW.md`** — starts as a placeholder. Claude Code fills it during Phase 0. Becomes the single source of truth for the project roadmap.
 
-**`agents/agent-N-slug/skills.md`** — per-agent context files. Auto-generated as templates. Fill in technical details, paste API docs, add schemas. Only the relevant agent reads its own skills file — bounded context by design.
+**`PLAYBOOK.md`** — the execution engine. Phase 0 is always present (Discovery or Decomposition depending on whether a blueprint was provided). Phase 1 contains the agent execution loop with retry logic and human escalation.
+
+**`agents/agent-N-slug/skills.md`** — per-agent context files. Auto-generated as templates. Only the relevant agent reads its own file — bounded context by design. Add any `.md` files alongside `skills.md` and the agent reads those too.
 
 ---
 
-## Without Blueprint vs With Blueprint
+## Optionally Enrich the Skills Files
 
-**Without blueprint** — AgentKit generates generic agents based on your detected stack. Useful for standard projects (a React app, a Next.js site) where the structure is predictable.
+Before running Claude Code, drop context-specific `.md` files into any agent's folder:
 
-```bash
-npx @patricksardinha/agentkit-cli init
 ```
-
-Phase 0 is skipped. Claude Code receives pre-defined generic agents and executes them directly.
-
-**With blueprint** — AgentKit generates a PLAYBOOK with Phase 0 enabled. Claude Code reads your features and decides the optimal agent structure before writing any code.
-
-```bash
-npx @patricksardinha/agentkit-cli init --blueprint PROJECT_BLUEPRINT.md
+agents/
+├── agent-3-ollama/
+│   ├── skills.md                    ← auto-generated template
+│   └── ollama-api-reference.md      ← you add this: Ollama API docs
+└── agent-4-rag/
+    ├── skills.md
+    └── cosine-similarity-example.md ← you add this: algorithm reference
 ```
-
-Phase 0 runs first. Claude Code proposes a decomposition, waits for your validation, then executes.
 
 ---
 
@@ -235,12 +244,14 @@ AgentKit:
 1. Reads your existing `AGENT_WORKFLOW.md` to find the last agent number
 2. Appends a new agent block scoped to the new feature
 3. Creates `agents/agent-N-csv-export/skills.md`
-4. Regenerates `PLAYBOOK.md` with the new agent included
+4. Regenerates `PLAYBOOK.md` **without Phase 0** — the initial decomposition is already done
 
 Then in Claude Code:
 ```
 Read PLAYBOOK.md and execute only the agents that haven't been completed yet.
 ```
+
+Phase 0 only ever runs once — during the initial `agentkit init`. Iterations go straight to execution.
 
 ---
 
@@ -264,61 +275,99 @@ Read PLAYBOOK.md and execute only the agents that haven't been completed yet.
 
 Integrating an LLM into AgentKit would mean choosing a provider, managing API keys, adding costs, and coupling the tool to a specific model that will become outdated. Instead, AgentKit is purely structural — it generates files that any LLM can read and act on. The intelligence lives in Claude Code (or whatever tool you use), not in AgentKit.
 
+### Phase 0 always runs — with or without blueprint
+
+The key insight: most developers don't know how to optimally decompose a project into agents. AgentKit solves this by always delegating decomposition to Claude Code. With a blueprint, Claude Code reads the file. Without one, it asks you three questions. Either way, you never have to think about agents yourself — that's Claude Code's job.
+
 ### You write intent, Claude Code writes structure
 
-The `PROJECT_BLUEPRINT.md` you write is intentionally free-form. You describe what you want to build, not how to build it. The decomposition into agents — which layer goes first, which agents can be parallelized, what the success criteria should be — is decided by Claude Code during Phase 0. This is the right division of responsibility: you own the product vision, the AI owns the technical planning.
+Whether you write a blueprint or answer questions in chat, you describe *what* you want to build, not *how*. The decomposition into agents — which layer goes first, what the success criteria should be — is always decided by Claude Code during Phase 0.
+
+### Phase 0 runs once, iterations skip it
+
+Phase 0 is only present in the PLAYBOOK generated by `agentkit init`. When you run `agentkit add --feature`, the regenerated PLAYBOOK goes straight to Phase 1 — the initial planning is done, you're just adding to it.
 
 ### Bounded context per agent
 
-Each agent reads only what it needs: `CLAUDE.md` (global conventions) and its own `skills.md` (specific context). An infrastructure agent doesn't see your business logic. A features agent doesn't see your CI/CD configuration. This produces better output and prevents agents from making decisions outside their scope.
+Each agent reads only `CLAUDE.md` and its own `skills.md`. An infrastructure agent doesn't see your business logic. A features agent doesn't see your CI/CD configuration. This produces better output and prevents agents from making decisions outside their scope.
 
 ### Verifiable success criteria
 
-Every agent ends with a runnable check. Not a goal — a gate. The PLAYBOOK enforces them. You always know exactly which agents have succeeded and which haven't, without reading a single line of generated code.
+Every agent ends with a runnable check — not a goal, a gate. The PLAYBOOK enforces them. You always know exactly which agents have succeeded and which haven't.
 
 ---
 
 ## Meta: AgentKit Was Built With AgentKit
 
-This CLI was built using the exact workflow it generates — including Phase 0.
+This CLI was built using the exact workflow it generates.
 
-The `PROJECT_BLUEPRINT.md` at the root of this repo was written first, in plain language, describing the CLI's features and constraints. Claude Code then ran Phase 0, proposed a 4-agent decomposition, and executed it after validation:
+### A little note
+
+The `CLAUDE.md`, `AGENT_WORKFLOW.md`, and `PLAYBOOK.md` files at the root of
+this repo are **illustrative** — they were written after the fact to show what
+AgentKit would have generated had it existed at the start of this project.
+This is the inherent bootstrapping paradox: you can't use a tool to build itself
+before the tool exists.
+
+`PROJECT_BLUEPRINT.md` however is **genuine** — it reflects the actual vision
+of the project from the beginning, including the Phase 0 decomposition principle
+that was central to the design.
+
+These four files serve as a concrete, real-world example of what AgentKit
+generates — on the same project rather than a separate demo repo. When you
+use AgentKit on your own project, the files it generates will follow exactly
+this structure.
+
+### How it would have worked
 
 ```
-Phase 0 — Decomposition (Claude Code proposed, human validated)
+Step 1 — Write PROJECT_BLUEPRINT.md (genuine)
+  Described the CLI's features, constraints, and architecture in plain language.
+  No agents, no layers — just intent.
 
-  Proposed decomposition:
-  1. Infra & Setup      → package.json, tsup, vitest, GitHub Actions
-  2. Detectors          → stackDetector, gitDetector
-  3. Generators         → claudeMd, workflow, playbook, skills generators
-  4. Commands CLI       → init, add, status, cli entry point
+Step 2 — npx agentkit init --blueprint PROJECT_BLUEPRINT.md
+  AgentKit detects: Node.js + TypeScript stack
+  Generates: CLAUDE.md, AGENT_WORKFLOW.md (placeholder), PLAYBOOK.md, agents/
 
-  Human: "Looks good, proceed."
+Step 3 — "Read PLAYBOOK.md and execute the procedure."
 
-Phase 1 — Execution
+  Phase 0 — Decomposition
+    Claude Code reads PROJECT_BLUEPRINT.md.
+    Proposes 4 agents, waits for validation.
 
-  Agent 1 · Infra & Setup
-    skills : agents/agent-1-infra/skills.md
-    runs   : npm run build
-    ✅ done
+    "I have decomposed the project into 4 agents:
+      1. Infra & Setup
+      2. Detectors
+      3. Generators & Templates
+      4. Commands CLI
+    Should I proceed?"
 
-  Agent 2 · Detectors
-    skills : agents/agent-2-detectors/skills.md
-    runs   : npm test
-    ✅ done
+    Human: "Yes."
 
-  Agent 3 · Generators & Templates
-    skills : agents/agent-3-generators/skills.md
-    runs   : npm test
-    ✅ done
+  Phase 1 — Execution
 
-  Agent 4 · Commands CLI
-    skills : agents/agent-4-commands/skills.md
-    runs   : npm run build && node dist/cli.js --help
-    ✅ done
+    Agent 1 · Infra & Setup
+      skills : agents/agent-1-infra/skills.md
+      runs   : npm run build        ✅
 
-  🎉 Workflow complete
+    Agent 2 · Detectors
+      skills : agents/agent-2-detectors/skills.md
+      runs   : npm test             ✅
+
+    Agent 3 · Generators & Templates
+      skills : agents/agent-3-generators/skills.md
+      runs   : npm test             ✅
+
+    Agent 4 · Commands CLI
+      skills : agents/agent-4-commands/skills.md
+      runs   : npm run build && node dist/cli.js --help   ✅
+
+    🎉 Workflow complete
 ```
+
+The `CLAUDE.md`, `AGENT_WORKFLOW.md`, and `PLAYBOOK.md` in this repo show
+exactly what each file looks like after AgentKit generates it and Claude Code
+fills it in. Use them as a reference when writing your own `PROJECT_BLUEPRINT.md`.
 
 ---
 
@@ -338,7 +387,7 @@ agentkit-cli/
 │   ├── generators/
 │   │   ├── claudeMdGenerator.ts
 │   │   ├── workflowGenerator.ts
-│   │   ├── playbookGenerator.ts ← Phase 0 + Phase 1
+│   │   ├── playbookGenerator.ts ← Phase 0 (Discovery or Decomposition) + Phase 1
 │   │   └── skillsGenerator.ts
 │   ├── templates/
 │   │   ├── react.ts

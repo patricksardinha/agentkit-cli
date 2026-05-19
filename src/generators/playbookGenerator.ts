@@ -9,11 +9,12 @@ export interface PlaybookInput {
 export function generatePlaybook({ agents, projectName, hasBlueprint }: PlaybookInput): string {
   const agentBlocks = agents.map((a) => agentBlock(a)).join('\n---\n\n')
 
-  const phase0 = hasBlueprint ? `## Phase 0 — Agent Decomposition (run this first)
+  const phase0 = hasBlueprint
+    ? `## Phase 0 — Agent Decomposition (run this first)
 
-> This phase is only present when a \`PROJECT_BLUEPRINT.md\` was provided.
-> Claude Code reads the blueprint and decomposes the project into specialized
-> agents before writing a single line of code.
+> A \`PROJECT_BLUEPRINT.md\` was provided.
+> Claude Code reads it and decomposes the project into specialized agents
+> before writing a single line of code.
 
 **Read these files in order:**
 1. \`CLAUDE.md\`
@@ -44,15 +45,55 @@ Wait for confirmation before moving to Phase 1.
 
 ---
 
-` : ''
+`
+    : `## Phase 0 — Project Discovery (run this first)
+
+> No \`PROJECT_BLUEPRINT.md\` was provided.
+> Before writing any code, Claude Code asks the user what they want to build,
+> then decomposes the project into agents — exactly as if a blueprint had been provided.
+
+**Ask the user these questions and wait for their answers:**
+
+1. What is this project? (one sentence describing the goal)
+2. What are the main features you want to build? (list them)
+3. Are there any tech constraints or architecture preferences?
+   (e.g. offline-only, specific DB, no auth, specific framework)
+
+**Once you have the answers, decompose the project into agents**
+following these rules:
+
+- One agent = one coherent technical layer (never mix two layers)
+- Each agent must have a runnable success criterion (\`npm test\`, \`cargo build\`…)
+- Agents must be ordered by dependency (no feature without infra first)
+- Maximum 6 agents — if you have more, group related ones
+- Always respect this order:
+  1. Infra & Configuration
+  2. Data layer (DB schema, models, services)
+  3. External integrations (auth, APIs, local services like Ollama)
+  4. UI & pages
+  5. Advanced features (RAG, export, realtime…)
+  6. Build & release (CI/CD, packaging, installers)
+
+**Write the result directly into \`AGENT_WORKFLOW.md\`** — replace its current
+content with your decomposition.
+
+**Then ask for human validation:**
+> "I have decomposed the project into N agents: [list them].
+> Should I proceed with execution?"
+
+Wait for confirmation before moving to Phase 1.
+
+---
+
+`
 
   return `# PLAYBOOK.md — ${projectName}
 
 > **One instruction to give Claude Code:**
 > "Read PLAYBOOK.md and execute the procedure."
 >
-> Claude Code handles the rest autonomously — agent decomposition,
-> execution, success validation, retries, and human escalation.
+> Claude Code handles the rest autonomously — project discovery or blueprint reading,
+> agent decomposition, execution, success validation, retries, and human escalation.
 > No API key required. No additional cost beyond your LLM subscription.
 
 ---
@@ -99,9 +140,9 @@ When you receive the instruction to continue after an iteration:
 Stop and wait for confirmation in these situations:
 - **3 consecutive failures** on the same success criterion
 - **Missing external dependency**: API key, env variable, unavailable service
-- **Conflict** between \`PROJECT_BLUEPRINT.md\` and the detected stack
+- **Conflict** between the detected stack and the user's stated constraints
 - **Destructive operation**: overwriting files not listed in deliverables
-${hasBlueprint ? '- **End of Phase 0**: agent decomposition must be validated before execution' : ''}
+- **End of Phase 0**: agent decomposition must be validated before execution
 `
 }
 

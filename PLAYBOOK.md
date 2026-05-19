@@ -1,191 +1,192 @@
-# PLAYBOOK.md — AgentKit CLI
+# PLAYBOOK.md — @patricksardinha/agentkit-cli
 
 > **One instruction to give Claude Code:**
 > "Read PLAYBOOK.md and execute the procedure."
 >
-> Claude Code handles the rest autonomously.
-> You don't need an API key or additional costs beyond your LLM subscription.
+> Claude Code handles the rest autonomously — blueprint reading, agent decomposition,
+> execution, success validation, retries, and human escalation.
+> No API key required. No additional cost beyond your LLM subscription.
 
 ---
 
-## Execution Rules (read before anything else)
+## Global Execution Rules
 
-You are the orchestrator of this project. Execute the agents below in order,
-following these rules at all times:
+Before each agent:
+1. Read `CLAUDE.md`
+2. Read `agents/agent-{N}-{slug}/skills.md` (current agent's file)
+3. Read the agent's section in `AGENT_WORKFLOW.md`
 
-1. **Before each agent**, read in this order:
-   - `CLAUDE.md`
-   - `agents/agent-{N}-{slug}/skills.md` (if it exists)
-   - The agent's section in `AGENT_WORKFLOW.md`
+After each agent:
+- Run the success criterion command
+- ✅ Passes → announce "✅ Agent N complete" and move to the next
+- ❌ Fails  → analyze the root cause, fix, rerun (max 3 attempts)
+- After 3 consecutive failures → stop and ask for human validation
 
-2. **After each agent**, run the success criterion command.
-   - ✅ Passes → announce "✅ Agent N complete" and move to the next
-   - ❌ Fails  → analyze the error, fix only what is in your scope, rerun
-   - After 3 consecutive failures → stop and ask for human validation
-
-3. **Never move to the next agent** without a passing success criterion.
-
-4. **Stay within scope** — do not touch files outside your current agent's
-   defined deliverables.
-
-5. At the end of all agents → announce "🎉 Workflow complete" and list
-   everything that was produced.
+**Never move to the next agent without a passing success criterion.**
+**Stay strictly within your current agent's defined scope.**
 
 ---
 
-## Agent 1 · Infra & Setup
+## Phase 0 — Agent Decomposition (run this first)
 
-**Scope:** scaffold the Node.js/TypeScript project structure, configure
-all build and test tooling, set up GitHub Actions for automated npm publishing.
+> A `PROJECT_BLUEPRINT.md` was provided.
+> Claude Code reads it and decomposes the project into specialized agents
+> before writing a single line of code.
 
-**Skills:** `agents/agent-1-infra/skills.md`
+**Read these files in order:**
+1. `CLAUDE.md`
+2. `PROJECT_BLUEPRINT.md`
 
-**Deliverables:**
-- `package.json` with commander, inquirer, chalk, ora, tsup, vitest
-- `tsconfig.json` and `tsup.config.ts`
-- `vitest.config.ts`
-- `.github/workflows/release.yml` (npm publish on `v*` tag)
-- `src/utils/logger.ts` (chalk + ora, no direct console.log elsewhere)
+**Then decompose the project into agents** following these rules:
 
-**Success criterion:**
+- One agent = one coherent technical layer (never mix two layers)
+- Each agent must have a runnable success criterion (`npm test`, `cargo build`…)
+- Agents must be ordered by dependency (no feature without infra first)
+- Maximum 6 agents — if you have more, group related ones
+- Always respect this order:
+  1. Infra & Configuration
+  2. Data layer (DB schema, models, services)
+  3. External integrations (auth, APIs, local services like Ollama)
+  4. UI & pages
+  5. Advanced features (RAG, export, realtime…)
+  6. Build & release (CI/CD, packaging, installers)
+
+**Write the result directly into `AGENT_WORKFLOW.md`** — replace its current
+content with your decomposition.
+
+**Then ask for human validation:**
+> "I have decomposed the project into N agents: [list them].
+> Should I proceed with execution?"
+
+Wait for confirmation before moving to Phase 1.
+
+---
+
+## Phase 1 — Execution
+
+### Agent 1 · Infra & Setup
+
+**Scope**: scaffold the Node.js/TypeScript project, configure build and test tooling, set up GitHub Actions.
+
+**Skills**: `agents/agent-1-infra/skills.md`
+
+**Deliverables**:
+- package.json (commander, inquirer, chalk, ora, tsup, vitest)
+- tsconfig.json and tsup.config.ts
+- vitest.config.ts
+- .github/workflows/release.yml
+- src/utils/logger.ts
+
+**Success criterion**:
 ```bash
 npm run build
 ```
 
-**On failure:** read the error output, fix only the configuration files
-in your scope, rerun `npm run build`. Do not touch src/commands/ or
-src/generators/ — those are out of scope for this agent.
+**On failure**:
+1. Read the full error output
+2. Fix the root cause — not the symptoms
+3. Rerun the success criterion (max 3 attempts)
+4. After 3 failures → ask for human validation
 
 ---
 
-## Agent 2 · Detectors
+### Agent 2 · Detectors
 
-**Depends on:** Agent 1 complete
+**Scope**: implement pure detection functions, no side effects.
 
-**Scope:** implement pure detection functions that read a target project
-directory and return a typed StackInfo object. No side effects.
+**Skills**: `agents/agent-2-detectors/skills.md`
 
-**Skills:** `agents/agent-2-detectors/skills.md`
+**Deliverables**:
+- src/detectors/stackDetector.ts
+- src/detectors/gitDetector.ts
+- src/types/stack.ts
+- tests/detectors/stackDetector.test.ts
 
-**Deliverables:**
-- `src/detectors/stackDetector.ts`
-  - Detects: react, nextjs, tauri, fastapi, express, node, unknown
-  - Detects extras: typescript, tailwind, prisma, testing
-  - Returns a typed `StackInfo` object
-- `src/detectors/gitDetector.ts`
-  - Returns true if the target directory contains a `.git` folder
-- `tests/detectors/stackDetector.test.ts`
-  - Fixtures for each supported stack (package.json mocks)
-  - Tests for TypeScript, Tailwind, Prisma detection
-
-**Success criterion:**
+**Success criterion**:
 ```bash
 npm test
 ```
 
-**On failure:** check the fixture paths, fix the detector logic or test
-setup, rerun `npm test`.
+**On failure**:
+1. Read the full error output
+2. Fix the root cause — not the symptoms
+3. Rerun the success criterion (max 3 attempts)
+4. After 3 failures → ask for human validation
 
 ---
 
-## Agent 3 · Generators & Templates
+### Agent 3 · Generators & Templates
 
-**Depends on:** Agent 2 complete
+**Scope**: one template per stack, four generators composing them into output files.
 
-**Scope:** implement one template per stack and four generators that
-compose them into output files. The playbookGenerator is the core
-deliverable of this agent.
+**Skills**: `agents/agent-3-generators/skills.md`
 
-**Skills:** `agents/agent-3-generators/skills.md`
+**Deliverables**:
+- src/templates/ (react, nextjs, tauri, fastapi, express, node, unknown)
+- src/generators/claudeMdGenerator.ts
+- src/generators/workflowGenerator.ts
+- src/generators/playbookGenerator.ts
+- src/generators/skillsGenerator.ts
+- src/types/agent.ts
+- tests/generators/*.test.ts
 
-**Deliverables:**
-- `src/templates/react.ts` — exports `claudeMd(stack)` and `workflow(stack)`
-- `src/templates/nextjs.ts`
-- `src/templates/tauri.ts`
-- `src/templates/fastapi.ts`
-- `src/templates/express.ts`
-- `src/templates/node.ts`
-- `src/templates/unknown.ts`
-- `src/generators/claudeMdGenerator.ts`
-  - Routes to the right template based on `stack.framework`
-  - Accepts optional `blueprintContent?: string`
-- `src/generators/workflowGenerator.ts`
-  - Same routing + blueprint support
-  - Returns a typed `Agent[]` array alongside the markdown string
-- `src/generators/playbookGenerator.ts`
-  - Takes `Agent[]` and `projectName`
-  - Generates PLAYBOOK.md with execution rules, per-agent blocks,
-    retry logic, and human escalation section
-- `src/generators/skillsGenerator.ts`
-  - Takes `Agent[]`
-  - Creates `agents/agent-{N}-{slug}/skills.md` for each agent
-- `tests/generators/*.test.ts` for each generator
-
-**Success criterion:**
+**Success criterion**:
 ```bash
 npm test
 ```
 
-**On failure:** check that template exports match the expected signature
-`(stack: StackInfo) => string`, fix, rerun `npm test`.
+**On failure**:
+1. Read the full error output
+2. Fix the root cause — not the symptoms
+3. Rerun the success criterion (max 3 attempts)
+4. After 3 failures → ask for human validation
 
 ---
 
-## Agent 4 · Commands CLI
+### Agent 4 · Commands CLI
 
-**Depends on:** Agents 2 and 3 complete
+**Scope**: wire generators and detectors into CLI commands. No business logic — composition only.
 
-**Scope:** wire all generators and detectors into the three CLI commands
-using commander.js. This agent writes no business logic — it only
-composes existing modules.
+**Skills**: `agents/agent-4-commands/skills.md`
 
-**Skills:** `agents/agent-4-commands/skills.md`
+**Deliverables**:
+- src/commands/init.ts (--blueprint support)
+- src/commands/add.ts (--feature support)
+- src/commands/status.ts
+- src/cli.ts
+- tests/commands/init.test.ts
 
-**Deliverables:**
-- `src/commands/init.ts`
-  - Detects stack with `stackDetector`
-  - Accepts `--blueprint <path>` — reads file if present, warns if missing
-  - Calls all four generators in order
-  - Writes CLAUDE.md, AGENT_WORKFLOW.md, PLAYBOOK.md to project root
-  - Calls skillsGenerator to create `agents/` folder structure
-- `src/commands/add.ts`
-  - Accepts `--feature <description>`
-  - Reads existing AGENT_WORKFLOW.md to find last agent number
-  - Appends new agent block
-  - Creates `agents/agent-{N+1}-{slug}/skills.md`
-  - Regenerates PLAYBOOK.md with all agents including the new one
-- `src/commands/status.ts`
-  - Reads AGENT_WORKFLOW.md if present and displays current state
-- `src/cli.ts` — registers all three commands with commander
-- `tests/commands/init.test.ts`
-
-**Success criterion:**
+**Success criterion**:
 ```bash
 npm run build && node dist/cli.js --help
 ```
 
-**On failure:** check that all imports resolve correctly, fix only
-src/commands/ and src/cli.ts, rerun the criterion.
+**On failure**:
+1. Read the full error output
+2. Fix the root cause — not the symptoms
+3. Rerun the success criterion (max 3 attempts)
+4. After 3 failures → ask for human validation
+
+---
+
+## Future Iterations
+
+When a new agent is added via `agentkit add --feature <description>`:
+1. A new agent block is appended to `AGENT_WORKFLOW.md`
+2. The folder `agents/agent-{N}-{slug}/` is created with `skills.md`
+3. This `PLAYBOOK.md` is regenerated to include the new agent — **without Phase 0**
+4. Execution resumes at the new agent only — completed agents are not rerun
+
+When you receive the instruction to continue after an iteration:
+> "Read PLAYBOOK.md and execute only the agents that haven't been completed yet."
 
 ---
 
 ## Human Validation Required
 
 Stop and wait for confirmation in these situations:
-
-- 3 consecutive failures on the same success criterion
-- A missing external dependency (API key, environment variable, binary)
-- A conflict between the detected stack and the blueprint content
-- Any destructive file operation (overwriting files not listed in deliverables)
-
----
-
-## Future Iterations
-
-When you receive an `agentkit add --feature "..."` instruction:
-
-1. Read `AGENT_WORKFLOW.md` to identify the last agent number
-2. Implement only the new feature — do not re-implement completed agents
-3. Update `AGENT_WORKFLOW.md` with the new agent block
-4. Create `agents/agent-{N+1}-{slug}/skills.md`
-5. Regenerate `PLAYBOOK.md` to include the new agent
+- **3 consecutive failures** on the same success criterion
+- **Missing external dependency**: API key, env variable, unavailable service
+- **Conflict** between `PROJECT_BLUEPRINT.md` and the detected stack
+- **Destructive operation**: overwriting files not listed in deliverables
+- **End of Phase 0**: agent decomposition must be validated before execution
