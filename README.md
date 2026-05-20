@@ -29,20 +29,16 @@ This is a deliberate choice. AgentKit is a **structural tool** — it generates 
 - **You** — you optionally write a `PROJECT_BLUEPRINT.md` describing what you want to build
 - **Claude Code** — it either reads your blueprint or asks you questions, decomposes the project into specialized agents, then executes them in sequence
 
-This separation means AgentKit works with any LLM and never becomes outdated
-as AI models improve. The tool itself costs nothing to run — but be aware:
+This separation means AgentKit works with any LLM and never becomes outdated as AI models improve. The tool itself costs nothing to run — but be aware:
 
-- **Claude Code or any hosted LLM** requires a paid subscription to the
-  provider (Anthropic, OpenAI, etc.)
-- **Local models via Ollama** are free to run, but require a machine with
-  sufficient RAM and ideally a dedicated GPU — a standard laptop may
-  struggle with larger models
+- **Claude Code or any hosted LLM** requires a paid subscription to the provider (Anthropic, OpenAI, etc.)
+- **Local models via Ollama** are free to run, but require a machine with sufficient RAM and ideally a dedicated GPU — a standard laptop may struggle with larger models
 - **AgentKit itself** has no cost, no API key, and no usage limits
 
 ```
 You (optionally write a blueprint)
         ↓
-AgentKit CLI (generates the structure)
+AgentKit CLI (detects stack or asks you, generates the structure)
         ↓
 Claude Code (discovers or reads blueprint → decomposes → executes)
         ↓
@@ -161,7 +157,7 @@ Once you validate the decomposition, Claude Code executes each agent autonomousl
 ```
 Agent 1 → Infra & Tauri Setup
   reads  : CLAUDE.md + agents/agent-1-infra/skills.md
-  runs   : npm run tauri:dev
+  runs   : npm run build
   ✅ passes → moves to Agent 2
   ❌ fails  → analyzes error, fixes, retries (max 3 times)
               → after 3 failures: asks for human intervention
@@ -184,6 +180,69 @@ In both cases, the instruction to give Claude Code is identical:
 ```
 Read PLAYBOOK.md and execute the procedure.
 ```
+
+---
+
+## Stack Detection
+
+AgentKit automatically reads your project directory to detect the stack.
+If it can identify your framework, it generates a `CLAUDE.md` immediately.
+If not, it asks you interactively.
+
+### Automatic detection
+
+AgentKit reads `package.json`, `Cargo.toml`, `requirements.txt`, and your
+directory structure to identify the stack without any input from you.
+
+| Stack | Detected by |
+|---|---|
+| **React + Vite** | `react` in `package.json` dependencies |
+| **Next.js** | `next` in `package.json` dependencies |
+| **Tauri v2** | `src-tauri/` directory present |
+| **FastAPI** | `fastapi` in `requirements.txt` |
+| **Express** | `express` in `package.json` dependencies |
+| **Node.js** | `package.json` exists (generic fallback) |
+
+### Interactive selection (when stack is not detected)
+
+If the project directory is empty or the stack cannot be identified automatically
+(new project, unusual structure), AgentKit asks you to pick from the supported list:
+
+```
+⚠ Stack not detected automatically.
+? Stack not detected automatically. Please select your stack:
+❯ React + Vite
+  Next.js
+  Tauri v2 (React + Rust)
+  FastAPI (Python)
+  Express (Node.js)
+  Node.js (generic)
+  None of the above — generate a generic CLAUDE.md to fill manually
+```
+
+This covers the most common case: **starting a brand new project** from an
+empty folder. You pick your stack, AgentKit generates a fully enriched `CLAUDE.md`
+with the right commands, conventions, and structure — as if it had detected the
+stack automatically.
+
+### "None of the above"
+
+If your stack isn't in the list, AgentKit generates a generic `CLAUDE.md` with
+a clear warning at the top:
+
+```markdown
+## ⚠️ Stack not configured
+AgentKit could not detect your stack and no stack was selected.
+Before running Claude Code, fill in: Stack, Commands, Structure.
+```
+
+You fill in the missing sections, then give Claude Code the usual instruction.
+
+### Adding a new stack
+
+The supported stack list grows with each release. If your stack isn't supported
+yet, see the **Contributing** section — adding a new template takes less than
+30 minutes.
 
 ---
 
@@ -255,25 +314,15 @@ Phase 0 only ever runs once — during the initial `agentkit init`. Iterations g
 
 ---
 
-## Supported Stacks
-
-| Stack | Detected by | Template enrichment |
-|---|---|---|
-| **React** | `react` in `package.json` | TypeScript/JS, Vite, testing |
-| **Next.js** | `next` in `package.json` | App Router, Tailwind, Prisma |
-| **Tauri** | `src-tauri/` directory | Rust/JS boundary, IPC, plugins |
-| **FastAPI** | `fastapi` in `requirements.txt` | Python, Pydantic, async |
-| **Express** | `express` in `package.json` | REST, middleware, auth |
-| **Node.js** | `package.json` (generic) | Scripts, modules, CI/CD |
-| **Unknown** | fallback | Generic editable workflow |
-
----
-
 ## Design Philosophy
 
 ### No AI in the tool — by design
 
 Integrating an LLM into AgentKit would mean choosing a provider, managing API keys, adding costs, and coupling the tool to a specific model that will become outdated. Instead, AgentKit is purely structural — it generates files that any LLM can read and act on. The intelligence lives in Claude Code (or whatever tool you use), not in AgentKit.
+
+### Stack detection first, interactive fallback
+
+AgentKit tries to detect your stack automatically. If it can't — because the project is empty or uses an uncommon structure — it asks you interactively rather than generating something useless. The goal is always a `CLAUDE.md` that Claude Code can actually use, not a generic placeholder that needs manual editing.
 
 ### Phase 0 always runs — with or without blueprint
 
@@ -301,7 +350,7 @@ Every agent ends with a runnable check — not a goal, a gate. The PLAYBOOK enfo
 
 This CLI was built using the exact workflow it generates.
 
-### A little note
+### A note on honesty
 
 The `CLAUDE.md`, `AGENT_WORKFLOW.md`, and `PLAYBOOK.md` files at the root of
 this repo are **illustrative** — they were written after the fact to show what
@@ -365,10 +414,6 @@ Step 3 — "Read PLAYBOOK.md and execute the procedure."
     🎉 Workflow complete
 ```
 
-The `CLAUDE.md`, `AGENT_WORKFLOW.md`, and `PLAYBOOK.md` in this repo show
-exactly what each file looks like after AgentKit generates it and Claude Code
-fills it in. Use them as a reference when writing your own `PROJECT_BLUEPRINT.md`.
-
 ---
 
 ## Project Structure
@@ -425,8 +470,9 @@ To add a new stack template:
 
 1. Create `src/templates/your-stack.ts` — export `claudeMd(stack)` and `workflow(stack)`
 2. Add detection in `src/detectors/stackDetector.ts`
-3. Register in `src/generators/claudeMdGenerator.ts` and `workflowGenerator.ts`
-4. Add fixtures in `tests/detectors/` and tests in `tests/generators/`
+3. Add the stack to the interactive selection list in `src/commands/init.ts`
+4. Register in `src/generators/claudeMdGenerator.ts` and `workflowGenerator.ts`
+5. Add fixtures in `tests/detectors/` and tests in `tests/generators/`
 
 ---
 
