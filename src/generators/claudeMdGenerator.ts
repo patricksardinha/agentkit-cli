@@ -1,5 +1,4 @@
 import type { StackInfo } from '../detectors/stackDetector.js'
-import { parseBlueprint } from '../utils/blueprintParser.js'
 import * as react from '../templates/react.js'
 import * as nextjs from '../templates/nextjs.js'
 import * as tauri from '../templates/tauri.js'
@@ -22,21 +21,11 @@ export function generateClaudeMd(stack: StackInfo, blueprintContent?: string): s
 
   if (!blueprintContent) return base
 
-  const features = parseBlueprint(blueprintContent)
-  if (features.length === 0) return base
-
-  const featureLines = features
-    .map((f, i) => {
-      const sub = f.items.length > 0 ? '\n' + f.items.map((it) => `   - ${it}`).join('\n') : ''
-      return `${i + 1}. **${f.name}**${sub}`
-    })
-    .join('\n')
-
-  const featureSection = `\n## Features (Blueprint)\n\n${featureLines}\n`
+  const blueprintNote = '\n> A PROJECT_BLUEPRINT.md is present — Claude Code will read it during Phase 0.\n'
 
   const conventionsIdx = base.indexOf('\n## Conventions')
   if (conventionsIdx !== -1) {
-    return base.slice(0, conventionsIdx) + featureSection + base.slice(conventionsIdx)
+    return base.slice(0, conventionsIdx) + blueprintNote + base.slice(conventionsIdx)
   }
-  return base + featureSection
+  return base + blueprintNote
 }

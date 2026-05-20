@@ -113,7 +113,7 @@ export function registerInit(program: Command): void {
 
       const genSpinner = ora('Génération des fichiers…').start()
       const claudeMdContent = generateClaudeMd(stack, blueprintContent)
-      const workflowContent = generateWorkflow(stack, blueprintContent)
+      const workflowContent = generateWorkflow(stack, blueprintContent, projectName)
       const agents = extractAgentsFromWorkflow(workflowContent)
       const playbookContent = generatePlaybook({ agents, projectName, hasBlueprint: !!blueprintContent })
       await writeFile(claudeMdPath, claudeMdContent, 'utf-8')

@@ -83,4 +83,52 @@ describe('generateClaudeMd', () => {
     expect(typeof result).toBe('string')
     expect(result.length).toBeGreaterThan(0)
   })
+
+  describe('blueprint note', () => {
+    const blueprint = `# My Project\n\n## Goal\nBuild something\n\n## Features\n- Auth\n- Dashboard\n`
+
+    it('adds the blueprint note when blueprintContent is provided', () => {
+      const result = generateClaudeMd(makeStack('react'), blueprint)
+      expect(result).toContain('PROJECT_BLUEPRINT.md is present')
+      expect(result).toContain('Phase 0')
+    })
+
+    it('does NOT list blueprint sections as features', () => {
+      const result = generateClaudeMd(makeStack('react'), blueprint)
+      expect(result).not.toContain('Features (Blueprint)')
+      expect(result).not.toContain('**Goal**')
+      expect(result).not.toContain('**Features**')
+    })
+
+    it('still contains the stack-based template content', () => {
+      const result = generateClaudeMd(makeStack('react'), blueprint)
+      expect(result).toContain('React')
+      expect(result).toContain('## Stack')
+      expect(result).toContain('## Commands')
+    })
+
+    it('adds blueprint note for unknown stack with blueprint', () => {
+      const result = generateClaudeMd(makeStack('unknown'), blueprint)
+      expect(result).toContain('PROJECT_BLUEPRINT.md is present')
+      expect(result).toContain('Phase 0')
+    })
+
+    it('returns base template unchanged when blueprintContent is absent', () => {
+      const withBlueprint = generateClaudeMd(makeStack('react'), blueprint)
+      const withoutBlueprint = generateClaudeMd(makeStack('react'))
+      expect(withBlueprint).not.toBe(withoutBlueprint)
+      expect(withoutBlueprint).not.toContain('PROJECT_BLUEPRINT.md is present')
+    })
+
+    it('adds blueprint note for every framework', () => {
+      const frameworks: StackInfo['framework'][] = [
+        'react', 'nextjs', 'tauri', 'fastapi', 'express', 'node', 'unknown',
+      ]
+      for (const framework of frameworks) {
+        const result = generateClaudeMd(makeStack(framework), blueprint)
+        expect(result).toContain('PROJECT_BLUEPRINT.md is present')
+        expect(result).not.toContain('Features (Blueprint)')
+      }
+    })
+  })
 })

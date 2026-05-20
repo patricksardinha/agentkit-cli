@@ -81,4 +81,44 @@ describe('generateWorkflow', () => {
     expect(typeof result).toBe('string')
     expect(result.length).toBeGreaterThan(0)
   })
+
+  describe('blueprint placeholder', () => {
+    const blueprint = `# My Project\n\n## Goal\nBuild something\n\n## Features\n- Auth\n- Dashboard\n`
+
+    it('returns a placeholder when blueprintContent is provided', () => {
+      const result = generateWorkflow(makeStack('react'), blueprint)
+      expect(result).toContain('AGENT_WORKFLOW.md')
+      expect(result).toContain('Phase 0')
+      expect(result).toContain('PROJECT_BLUEPRINT.md')
+      expect(result).toContain('Waiting for Phase 0 decomposition')
+    })
+
+    it('uses projectName in heading when provided', () => {
+      const result = generateWorkflow(makeStack('react'), blueprint, 'my-app')
+      expect(result).toContain('AGENT_WORKFLOW.md — my-app')
+    })
+
+    it('falls back to framework name when projectName is omitted', () => {
+      const result = generateWorkflow(makeStack('react'), blueprint)
+      expect(result).toContain('AGENT_WORKFLOW.md — react')
+    })
+
+    it('does NOT parse blueprint sections as agents', () => {
+      const result = generateWorkflow(makeStack('react'), blueprint, 'my-app')
+      expect(result).not.toContain('Agent · Goal')
+      expect(result).not.toContain('Agent · Features')
+      expect(result).not.toContain('Agent 1')
+    })
+
+    it('returns the placeholder for every framework when blueprint is provided', () => {
+      const frameworks: StackInfo['framework'][] = [
+        'react', 'nextjs', 'tauri', 'fastapi', 'express', 'node', 'unknown',
+      ]
+      for (const framework of frameworks) {
+        const result = generateWorkflow(makeStack(framework), blueprint, 'proj')
+        expect(result).toContain('Phase 0')
+        expect(result).not.toContain('Agent 1')
+      }
+    })
+  })
 })

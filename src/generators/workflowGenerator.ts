@@ -1,6 +1,4 @@
 import type { StackInfo } from '../detectors/stackDetector.js'
-import { parseBlueprint } from '../utils/blueprintParser.js'
-import { toSlug } from '../utils/agentParser.js'
 import * as react from '../templates/react.js'
 import * as nextjs from '../templates/nextjs.js'
 import * as tauri from '../templates/tauri.js'
@@ -9,8 +7,8 @@ import * as express from '../templates/express.js'
 import * as node from '../templates/node.js'
 import * as unknown from '../templates/unknown.js'
 
-export function generateWorkflow(stack: StackInfo, blueprintContent?: string): string {
-  if (blueprintContent) return blueprintWorkflow(stack, blueprintContent)
+export function generateWorkflow(stack: StackInfo, blueprintContent?: string, projectName?: string): string {
+  if (blueprintContent) return blueprintPlaceholder(projectName ?? stack.framework)
 
   switch (stack.framework) {
     case 'react':   return react.workflow(stack)
@@ -23,40 +21,15 @@ export function generateWorkflow(stack: StackInfo, blueprintContent?: string): s
   }
 }
 
-function blueprintWorkflow(stack: StackInfo, blueprintContent: string): string {
-  const features = parseBlueprint(blueprintContent)
+function blueprintPlaceholder(projectName: string): string {
+  return `# AGENT_WORKFLOW.md — ${projectName}
 
-  const agentBlocks = features.map((feature, i) => {
-    const n = i + 1
-    const slug = toSlug(feature.name)
-    const outputLines =
-      feature.items.length > 0
-        ? feature.items.map((item) => `  - ${item}`).join('\n')
-        : `  - src/${slug}/`
-    return `### Agent ${n} · ${feature.name}
-Périmètre : Implémenter la fonctionnalité ${feature.name.toLowerCase()}
-Produit   :
-${outputLines}
-Critère   : npm test (tests ${feature.name.toLowerCase()} passent)`
-  })
+> This file will be filled in by Claude Code during Phase 0.
+> Claude Code will read PROJECT_BLUEPRINT.md, propose a decomposition,
+> and replace this content after human validation.
 
-  const ciN = features.length + 1
-  agentBlocks.push(
-    `### Agent ${ciN} · Tests & CI
-Périmètre : Couverture de tests complète et configuration du pipeline CI
-Produit   :
-  - tests/
-  - .github/workflows/
-Critère   : npm test passe, pipeline CI vert`,
-  )
+---
 
-  return `# Agent Workflow — ${stack.framework} (Blueprint)
-
-## Stack détectée
-Framework: ${stack.framework} | Language: ${stack.language}
-
-## Agents
-
-${agentBlocks.join('\n\n')}
+*Waiting for Phase 0 decomposition...*
 `
 }

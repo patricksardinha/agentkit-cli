@@ -63,27 +63,30 @@ describe('generateClaudeMd with blueprint', () => {
     expect(generateClaudeMd(REACT_STACK)).toBe(generateClaudeMd(REACT_STACK, undefined))
   })
 
-  it('includes a Features section when blueprint is provided', () => {
+  it('adds the blueprint note when blueprint is provided', () => {
     const result = generateClaudeMd(REACT_STACK, BLUEPRINT)
-    expect(result).toContain('## Features (Blueprint)')
-    expect(result).toContain('Authentication')
-    expect(result).toContain('Dashboard')
-    expect(result).toContain('API')
+    expect(result).toContain('PROJECT_BLUEPRINT.md is present')
+    expect(result).toContain('Phase 0')
   })
 
-  it('includes blueprint sub-items', () => {
+  it('does NOT include a Features (Blueprint) section', () => {
     const result = generateClaudeMd(REACT_STACK, BLUEPRINT)
-    expect(result).toContain('JWT tokens')
-    expect(result).toContain('User statistics')
+    expect(result).not.toContain('## Features (Blueprint)')
   })
 
-  it('places Features section before Conventions', () => {
+  it('does NOT include blueprint sub-items as feature bullets', () => {
     const result = generateClaudeMd(REACT_STACK, BLUEPRINT)
-    const featIdx = result.indexOf('## Features (Blueprint)')
+    expect(result).not.toContain('JWT tokens')
+    expect(result).not.toContain('User statistics')
+  })
+
+  it('places blueprint note before Conventions', () => {
+    const result = generateClaudeMd(REACT_STACK, BLUEPRINT)
+    const noteIdx = result.indexOf('PROJECT_BLUEPRINT.md is present')
     const convIdx = result.indexOf('## Conventions')
-    expect(featIdx).toBeGreaterThan(-1)
+    expect(noteIdx).toBeGreaterThan(-1)
     expect(convIdx).toBeGreaterThan(-1)
-    expect(featIdx).toBeLessThan(convIdx)
+    expect(noteIdx).toBeLessThan(convIdx)
   })
 
   it('still contains stack-specific content', () => {
@@ -98,33 +101,35 @@ describe('generateWorkflow with blueprint', () => {
     expect(generateWorkflow(REACT_STACK)).toBe(generateWorkflow(REACT_STACK, undefined))
   })
 
-  it('generates one agent per blueprint feature plus a CI agent', () => {
+  it('returns a Phase 0 placeholder instead of agent blocks', () => {
     const result = generateWorkflow(REACT_STACK, BLUEPRINT)
-    expect(result).toContain('Agent 1 · Authentication')
-    expect(result).toContain('Agent 2 · Dashboard')
-    expect(result).toContain('Agent 3 · API')
-    expect(result).toContain('Agent 4 · Tests & CI')
+    expect(result).toContain('AGENT_WORKFLOW.md')
+    expect(result).toContain('Phase 0')
+    expect(result).toContain('PROJECT_BLUEPRINT.md')
+    expect(result).toContain('Waiting for Phase 0 decomposition')
   })
 
-  it('each agent block is parseable by extractAgentsFromWorkflow', () => {
+  it('does NOT generate agent blocks from blueprint sections', () => {
     const result = generateWorkflow(REACT_STACK, BLUEPRINT)
-    const agents = extractAgentsFromWorkflow(result)
-    expect(agents).toHaveLength(4)
-    expect(agents[0].name).toBe('Authentication')
-    expect(agents[0].slug).toBe('authentication')
-    expect(agents[3].name).toBe('Tests & CI')
-    expect(agents[3].slug).toBe('tests-ci')
+    expect(result).not.toContain('Agent 1')
+    expect(result).not.toContain('Authentication')
+    expect(result).not.toContain('Dashboard')
+    expect(result).not.toContain('Tests & CI')
   })
 
-  it('includes blueprint feature items as outputs', () => {
+  it('does NOT include blueprint feature items as outputs', () => {
     const result = generateWorkflow(REACT_STACK, BLUEPRINT)
-    expect(result).toContain('JWT tokens')
-    expect(result).toContain('User statistics')
+    expect(result).not.toContain('JWT tokens')
+    expect(result).not.toContain('User statistics')
   })
 
-  it('includes stack information in the header', () => {
+  it('uses projectName in heading when provided', () => {
+    const result = generateWorkflow(REACT_STACK, BLUEPRINT, 'my-app')
+    expect(result).toContain('AGENT_WORKFLOW.md — my-app')
+  })
+
+  it('falls back to framework name when projectName is omitted', () => {
     const result = generateWorkflow(REACT_STACK, BLUEPRINT)
-    expect(result).toContain('react')
-    expect(result).toContain('typescript')
+    expect(result).toContain('AGENT_WORKFLOW.md — react')
   })
 })
