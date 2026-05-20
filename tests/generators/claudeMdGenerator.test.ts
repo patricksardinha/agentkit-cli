@@ -62,6 +62,43 @@ describe('generateClaudeMd', () => {
     expect(result).toContain('Rust')
   })
 
+  it('Tauri — uses correct command format (colon notation)', () => {
+    const result = generateClaudeMd(makeStack('tauri'))
+    expect(result).toContain('npm run tauri:dev')
+    expect(result).toContain('npm run tauri:build')
+    expect(result).not.toContain('npm run tauri dev')
+    expect(result).not.toContain('npm run tauri build')
+  })
+
+  it('Tauri — includes npm run dev and npx tsc --noEmit commands', () => {
+    const result = generateClaudeMd(makeStack('tauri'))
+    expect(result).toContain('npm run dev')
+    expect(result).toContain('npx tsc --noEmit')
+  })
+
+  it('Tauri — convention is in English, not French', () => {
+    const result = generateClaudeMd(makeStack('tauri'))
+    expect(result).toContain('All console output goes through a centralized logger')
+    expect(result).not.toContain('Tout output console passe par un logger centralisé')
+  })
+
+  it('Tauri — includes isTauri(), dynamic imports, and browser fallback conventions', () => {
+    const result = generateClaudeMd(makeStack('tauri'))
+    expect(result).toContain('isTauri()')
+    expect(result).toContain('dynamic')
+    expect(result).toContain('browser fallback')
+  })
+
+  it('Tauri — reflects TypeScript when hasTypeScript is true', () => {
+    const result = generateClaudeMd(makeStack('tauri', { hasTypeScript: true }))
+    expect(result).toContain('TypeScript')
+  })
+
+  it('Tauri — reflects JavaScript when hasTypeScript is false', () => {
+    const result = generateClaudeMd(makeStack('tauri', { hasTypeScript: false }))
+    expect(result).toContain('JavaScript')
+  })
+
   it('FastAPI — mentions FastAPI and Python', () => {
     const result = generateClaudeMd(makeStack('fastapi'))
     expect(result).toContain('FastAPI')
