@@ -24,6 +24,45 @@ const FRAMEWORK_LABELS: Record<StackInfo['framework'], string> = {
   unknown: 'Unknown (generic)',
 }
 
+const STACK_CHOICES = [
+  { name: 'React + Vite', value: 'react' },
+  { name: 'Next.js', value: 'nextjs' },
+  { name: 'Tauri v2 (React + Rust)', value: 'tauri' },
+  { name: 'FastAPI (Python)', value: 'fastapi' },
+  { name: 'Express (Node.js)', value: 'express' },
+  { name: 'Node.js (generic)', value: 'node' },
+  { name: 'None of the above — generate a generic CLAUDE.md to fill manually', value: 'none' },
+]
+
+export async function resolveStack(
+  detected: StackInfo,
+): Promise<{ stack: StackInfo; stackNotConfigured: boolean }> {
+  if (detected.framework !== 'unknown') {
+    return { stack: detected, stackNotConfigured: false }
+  }
+
+  logger.warn('Stack not detected automatically.')
+  const { selectedFramework } = await inquirer.prompt<{ selectedFramework: string }>([
+    {
+      type: 'list',
+      name: 'selectedFramework',
+      message: 'Stack not detected automatically. Please select your stack:',
+      choices: STACK_CHOICES as unknown as string[],
+    },
+  ])
+
+  if (selectedFramework === 'none') {
+    return { stack: detected, stackNotConfigured: true }
+  }
+
+  const framework = selectedFramework as StackInfo['framework']
+  const language: StackInfo['language'] = framework === 'fastapi' ? 'python' : 'javascript'
+  return {
+    stack: { ...detected, framework, language, hasTypeScript: false },
+    stackNotConfigured: false,
+  }
+}
+
 async function fileExists(path: string): Promise<boolean> {
   try {
     await readFile(path)
@@ -50,8 +89,10 @@ export function registerInit(program: Command): void {
         logger.warn('Ce dossier n\'est pas un repo git — lancez git init si nécessaire')
       }
 
-      const label = FRAMEWORK_LABELS[stack.framework]
-      logger.info(`Stack détectée : ${label} (${stack.language})`)
+      const { stack: resolvedStack, stackNotConfigured } = await resolveStack(stack)
+
+      const label = FRAMEWORK_LABELS[resolvedStack.framework]
+      logger.info(`Stack : ${label} (${resolvedStack.language})`)
 
       const { confirmed } = await inquirer.prompt<{ confirmed: boolean }>([
         {
@@ -112,8 +153,8 @@ export function registerInit(program: Command): void {
       }
 
       const genSpinner = ora('Génération des fichiers…').start()
-      const claudeMdContent = generateClaudeMd(stack, blueprintContent)
-      const workflowContent = generateWorkflow(stack, blueprintContent, projectName)
+      const claudeMdContent = generateClaudeMd(resolvedStack, blueprintContent, stackNotConfigured)
+      const workflowContent = generateWorkflow(resolvedStack, blueprintContent, projectName)
       const agents = extractAgentsFromWorkflow(workflowContent)
       const playbookContent = generatePlaybook({ agents, projectName, hasBlueprint: !!blueprintContent })
       await writeFile(claudeMdPath, claudeMdContent, 'utf-8')

@@ -7,7 +7,19 @@ import * as express from '../templates/express.js'
 import * as node from '../templates/node.js'
 import * as unknown from '../templates/unknown.js'
 
-export function generateClaudeMd(stack: StackInfo, blueprintContent?: string): string {
+const STACK_NOT_CONFIGURED_WARNING = `
+## ⚠️ Stack not configured
+AgentKit could not detect your stack and no stack was selected.
+Before running Claude Code, fill in the following sections:
+- Stack (framework, runtime, DB, tools)
+- Commands (dev, build, test)
+- Structure (folder layout)
+
+Once filled, give Claude Code this instruction:
+"Read PLAYBOOK.md and execute the procedure."
+`
+
+export function generateClaudeMd(stack: StackInfo, blueprintContent?: string, stackNotConfigured?: boolean): string {
   let base: string
   switch (stack.framework) {
     case 'react':   base = react.claudeMd(stack); break
@@ -17,6 +29,11 @@ export function generateClaudeMd(stack: StackInfo, blueprintContent?: string): s
     case 'express': base = express.claudeMd(stack); break
     case 'node':    base = node.claudeMd(stack); break
     default:        base = unknown.claudeMd(stack)
+  }
+
+  if (stackNotConfigured) {
+    const firstNewline = base.indexOf('\n')
+    base = base.slice(0, firstNewline + 1) + STACK_NOT_CONFIGURED_WARNING + base.slice(firstNewline + 1)
   }
 
   if (!blueprintContent) return base
