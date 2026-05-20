@@ -56,9 +56,10 @@ export async function resolveStack(
   }
 
   const framework = selectedFramework as StackInfo['framework']
-  const language: StackInfo['language'] = framework === 'fastapi' ? 'python' : 'javascript'
+  const hasTypeScript = ['react', 'nextjs', 'tauri'].includes(framework)
+  const language: StackInfo['language'] = framework === 'fastapi' ? 'python' : hasTypeScript ? 'typescript' : 'javascript'
   return {
-    stack: { ...detected, framework, language, hasTypeScript: false },
+    stack: { ...detected, framework, language, hasTypeScript },
     stackNotConfigured: false,
   }
 }

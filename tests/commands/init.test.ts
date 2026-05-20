@@ -64,17 +64,60 @@ describe('resolveStack', () => {
 
     expect(vi.mocked(inquirer.prompt)).toHaveBeenCalledOnce()
     expect(result.stack.framework).toBe('tauri')
-    expect(result.stack.language).toBe('javascript')
+    expect(result.stack.language).toBe('typescript')
+    expect(result.stack.hasTypeScript).toBe(true)
     expect(result.stackNotConfigured).toBe(false)
   })
 
-  it('unknown + user selects Tauri → stack.framework is tauri', async () => {
+  it('unknown + user selects Tauri → hasTypeScript true, language typescript', async () => {
     vi.mocked(inquirer.prompt).mockResolvedValueOnce({ selectedFramework: 'tauri' })
 
     const result = await resolveStack(makeStack('unknown'))
 
     expect(result.stack.framework).toBe('tauri')
+    expect(result.stack.hasTypeScript).toBe(true)
+    expect(result.stack.language).toBe('typescript')
     expect(result.stackNotConfigured).toBe(false)
+  })
+
+  it('unknown + user selects React → hasTypeScript true, language typescript', async () => {
+    vi.mocked(inquirer.prompt).mockResolvedValueOnce({ selectedFramework: 'react' })
+
+    const result = await resolveStack(makeStack('unknown'))
+
+    expect(result.stack.framework).toBe('react')
+    expect(result.stack.hasTypeScript).toBe(true)
+    expect(result.stack.language).toBe('typescript')
+  })
+
+  it('unknown + user selects Next.js → hasTypeScript true, language typescript', async () => {
+    vi.mocked(inquirer.prompt).mockResolvedValueOnce({ selectedFramework: 'nextjs' })
+
+    const result = await resolveStack(makeStack('unknown'))
+
+    expect(result.stack.framework).toBe('nextjs')
+    expect(result.stack.hasTypeScript).toBe(true)
+    expect(result.stack.language).toBe('typescript')
+  })
+
+  it('unknown + user selects Express → hasTypeScript false, language javascript', async () => {
+    vi.mocked(inquirer.prompt).mockResolvedValueOnce({ selectedFramework: 'express' })
+
+    const result = await resolveStack(makeStack('unknown'))
+
+    expect(result.stack.framework).toBe('express')
+    expect(result.stack.hasTypeScript).toBe(false)
+    expect(result.stack.language).toBe('javascript')
+  })
+
+  it('unknown + user selects Node.js → hasTypeScript false, language javascript', async () => {
+    vi.mocked(inquirer.prompt).mockResolvedValueOnce({ selectedFramework: 'node' })
+
+    const result = await resolveStack(makeStack('unknown'))
+
+    expect(result.stack.framework).toBe('node')
+    expect(result.stack.hasTypeScript).toBe(false)
+    expect(result.stack.language).toBe('javascript')
   })
 
   it('unknown + user selects FastAPI → language is python', async () => {
