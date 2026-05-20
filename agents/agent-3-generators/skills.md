@@ -22,8 +22,8 @@ export interface Agent {
   slug: string          // 'infra', 'auth', 'features'…
   name: string          // 'Infra & Setup', 'Auth & Supabase'…
   scope: string         // one-line description
-  deliverables: string[]
-  successCriterion: string   // the runnable bash command
+  outputs: string[]
+  criterion: string   // the runnable bash command
 }
 ```
 
