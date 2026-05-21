@@ -9,6 +9,7 @@ import { generateClaudeMd } from '../generators/claudeMdGenerator.js'
 import { generateWorkflow } from '../generators/workflowGenerator.js'
 import { generatePlaybook } from '../generators/playbookGenerator.js'
 import { generateSkills } from '../generators/skillsGenerator.js'
+import { generateReadme } from '../generators/readmeGenerator.js'
 import { extractAgentsFromWorkflow } from '../utils/agentParser.js'
 import { logger } from '../utils/logger.js'
 import type { StackInfo } from '../detectors/stackDetector.js'
@@ -112,6 +113,7 @@ export function registerInit(program: Command): void {
       const claudeMdPath = join(cwd, 'CLAUDE.md')
       const workflowPath = join(cwd, 'AGENT_WORKFLOW.md')
       const playbookPath = join(cwd, 'PLAYBOOK.md')
+      const readmePath = join(cwd, 'README.md')
 
       // Resolve project name from package.json or directory name
       let projectName = basename(cwd)
@@ -162,11 +164,23 @@ export function registerInit(program: Command): void {
       await writeFile(workflowPath, workflowContent, 'utf-8')
       await writeFile(playbookPath, playbookContent, 'utf-8')
       await generateSkills(agents, cwd)
+
+      const readmeExists = await fileExists(readmePath)
+      if (!readmeExists) {
+        const readmeContent = generateReadme({ projectName, blueprintContent, stack: resolvedStack })
+        await writeFile(readmePath, readmeContent, 'utf-8')
+      }
+
       genSpinner.succeed('Fichiers générés')
 
       logger.success('CLAUDE.md         → créé')
       logger.success('AGENT_WORKFLOW.md  → créé')
       logger.success('PLAYBOOK.md        → créé')
       logger.success(`agents/           → ${agents.length} dossier(s) créé(s)`)
+      if (readmeExists) {
+        logger.warn('README.md already exists — skipped (not overwritten)')
+      } else {
+        logger.success('README.md         → créé')
+      }
     })
 }

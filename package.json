@@ -4,7 +4,7 @@
   "publishConfig": {
     "access": "public"
   },
-  "description": "Scaffolder des workflows multi-agents Claude Code",
+  "description": "Scaffold AI-native agent workflows for Claude Code",
   "type": "module",
   "bin": {
     "agentkit": "./dist/cli.js"

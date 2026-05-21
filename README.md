@@ -311,6 +311,7 @@ my-project/
 ├── CLAUDE.md                    ← generated: conventions, stack, rules
 ├── AGENT_WORKFLOW.md            ← placeholder: Claude Code fills this in Phase 0
 ├── PLAYBOOK.md                  ← generated: Phase 0 + pause + Phase 1
+├── README.md                    ← generated: project doc (skipped if already exists)
 │
 └── agents/                      ← created by Claude Code after Phase 0 validation
     ├── agent-1-infra/
@@ -326,6 +327,10 @@ my-project/
 **`AGENT_WORKFLOW.md`** — starts as a placeholder. Claude Code fills it during Phase 0. Becomes the single source of truth for the project roadmap.
 
 **`PLAYBOOK.md`** — the execution engine. Contains Phase 0, the skills enrichment pause, and Phase 1 with retry logic and human escalation.
+
+**`README.md`** — generated automatically if no README.md exists yet.
+Contains the project name, goal and features extracted from the blueprint, the tech stack, getting started commands, and a reference to the AgentKit workflow. If a README.md already exists in your project, AgentKit skips
+it and warns you — your existing doc is never overwritten.
 
 **`agents/agent-N-slug/`** — created by Claude Code after Phase 0 validation. Drop any `.md` files here during the enrichment pause — the agent will read them before starting.
 
