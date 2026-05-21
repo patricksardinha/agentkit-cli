@@ -106,6 +106,30 @@ describe('generatePlaybook (common)', () => {
       expect(typeof result).toBe('string')
       expect(result).toContain('empty-project')
     })
+
+    it(`[${label}] contains the Between Phase 0 and Phase 1 block`, () => {
+      const result = generatePlaybook({ agents: sampleAgents, projectName: 'my-app', hasBlueprint })
+      expect(result).toContain('Between Phase 0 and Phase 1')
+    })
+
+    it(`[${label}] Between block contains "proceed"`, () => {
+      const result = generatePlaybook({ agents: sampleAgents, projectName: 'my-app', hasBlueprint })
+      expect(result).toContain('proceed')
+    })
+
+    it(`[${label}] Between block contains "agents/"`, () => {
+      const result = generatePlaybook({ agents: sampleAgents, projectName: 'my-app', hasBlueprint })
+      expect(result).toContain('agents/')
+    })
+
+    it(`[${label}] Between Phase block appears after Phase 0 and before Phase 1`, () => {
+      const result = generatePlaybook({ agents: sampleAgents, projectName: 'my-app', hasBlueprint })
+      const phase0Idx = result.indexOf('Phase 0')
+      const betweenIdx = result.indexOf('Between Phase 0 and Phase 1')
+      const phase1Idx = result.indexOf('Phase 1 — Execution')
+      expect(phase0Idx).toBeLessThan(betweenIdx)
+      expect(betweenIdx).toBeLessThan(phase1Idx)
+    })
   }
 })
 

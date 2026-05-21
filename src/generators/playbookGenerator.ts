@@ -87,6 +87,39 @@ Wait for confirmation before moving to Phase 1.
 
 `
 
+  const betweenPhase = `## Between Phase 0 and Phase 1 — Skills Enrichment
+
+Once the decomposition is validated, before writing any code:
+
+1. Create all agent folders and empty skills files:
+   For each agent in your decomposition, create:
+   - agents/agent-{N}-{slug}/skills.md  (empty for now)
+
+2. Announce to the user:
+   "Agent folders created under agents/.
+
+   You can now enrich any skills.md with additional context
+   before I start executing:
+   - API documentation
+   - Database schemas
+   - Algorithm references
+   - Business conventions
+   - Any project-specific knowledge
+
+   Add .md files directly in the relevant agent folder —
+   I will read everything in agents/agent-{N}-{slug}/ before
+   starting that agent.
+
+   Type 'proceed' (or any message) when you're ready
+   and I'll start Phase 1."
+
+3. Wait for the user's message before starting Phase 1.
+   Do not start Agent 1 until the user explicitly responds.
+
+---
+
+`
+
   return `# PLAYBOOK.md — ${projectName}
 
 > **One instruction to give Claude Code:**
@@ -116,7 +149,7 @@ After each agent:
 
 ---
 
-${phase0}## Phase 1 — Execution
+${phase0}${betweenPhase}## Phase 1 — Execution
 
 ${agentBlocks}
 
