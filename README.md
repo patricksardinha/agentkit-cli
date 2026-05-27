@@ -19,9 +19,7 @@ It scaffolds the *orchestration layer* that sits on top of any project: the file
 You open Claude Code, type one instruction, and it runs the entire workflow autonomously.
 
 > [!NOTE]
-> Why not see it in action? Below is a quick walkthrough showing how AgentKit scaffolds a fully functional Todo-App.
-> 
-> (Pro tip 💡: Turn up the volume and enjoy the relaxing keyboard soundscapes while it builds).
+> Why not see it in action? Below is a quick walkthrough showing how AgentKit scaffolds a fully functional Todo-App. (Pro tip 💡: Turn up the volume and enjoy the relaxing keyboard soundscapes while it builds).
 
 
 https://github.com/user-attachments/assets/26c175a9-2ccf-44f8-b206-a14d17c1ebef
@@ -398,50 +396,6 @@ Each agent reads only `CLAUDE.md` and its own folder. An infrastructure agent do
 ### Verifiable success criteria
 
 Every agent ends with a runnable check — not a goal, a gate. The PLAYBOOK enforces them.
-
----
-
-## Meta: AgentKit Was Built With AgentKit
-
-This CLI was built using the exact workflow it generates.
-
-### A note on honesty
-
-The `CLAUDE.md`, `AGENT_WORKFLOW.md`, and `PLAYBOOK.md` at the root of this repo
-are **illustrative** — written after the fact to show what AgentKit would have
-generated. This is the bootstrapping paradox: you can't use a tool to build itself
-before it exists.
-
-`PROJECT_BLUEPRINT.md` is **genuine** — it reflects the actual vision from the
-start, including the Phase 0 and skills enrichment principles.
-
-### How it would have worked
-
-```
-Step 1 — Write PROJECT_BLUEPRINT.md
-Step 2 — npx agentkit init --blueprint PROJECT_BLUEPRINT.md
-Step 3 — "Read PLAYBOOK.md and execute the procedure."
-
-  Phase 0: Claude Code proposes 4 agents → human validates
-
-  Skills pause: Claude Code creates agents/ folders → human adds
-                skills context → types "proceed"
-
-  Phase 1:
-    Agent 1 · Infra & Setup      → npm run build        ✅
-    Agent 2 · Detectors          → npm test             ✅
-    Agent 3 · Generators         → npm test             ✅
-    Agent 4 · Commands CLI       → node dist/cli.js --help ✅
-    🎉 Workflow complete
-```
-
-### Real-world example
-
-AgentKit was also used to build **DevLog Desktop** — a Tauri v2 desktop app
-with local RAG via Ollama. The full `PROJECT_BLUEPRINT.md`, `CLAUDE.md`,
-`AGENT_WORKFLOW.md`, and `PLAYBOOK.md` from that project are available at
-[github.com/patricksardinha/devlog-desktop](https://github.com/patricksardinha/devlog-desktop)
-as a concrete reference of what AgentKit generates on a real project.
 
 ---
 
