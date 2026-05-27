@@ -19,7 +19,7 @@ It scaffolds the *orchestration layer* that sits on top of any project: the file
 You open Claude Code, type one instruction, and it runs the entire workflow autonomously.
 
 > [!NOTE]
-> Why not see it in action? Below is a quick walkthrough showing how AgentKit scaffolds a fully functional Todo-App.
+> Why not see it in action? Below is a quick walkthrough showing how AgentKit scaffolds a fully functional Todo-App.  
 > (Pro tip 💡: Turn up the volume and enjoy the relaxing keyboard soundscapes while it builds).
 
 
