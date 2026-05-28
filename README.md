@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/agentkit-banner.svg" alt="AgentKit" width="400" />
+</p>
+
 # @patricksardinha/agentkit-cli
 
 > Bootstrap any project with an AI-native orchestration layer — like `create vite@latest`, but for agentic development with Claude Code.
